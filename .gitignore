@@ -1,0 +1,22 @@
+# IDE and environment files
+.idea/
+*.iml
+.claude/
+CLAUDE.md
+
+# Compiled files and archives
+bin/
+*.zip
+chaos-bin/
+chaos_workspace/
+
+# Report and review artifacts
+*.txt
+*.txt — *
+*_final.txt
+*.md
+!README.md
+
+# Final additions for chaos and backups
+chaos/
+EndScreen.java
