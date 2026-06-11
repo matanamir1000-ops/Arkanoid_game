@@ -46,8 +46,8 @@ public class Game {
     private static final int BALL_2_START_Y = 480;
     private static final int BALL_3_START_Y = 460;
     private static final int BALL_RADIUS = 5;
-    private static final int BALL_SPEED_X = 5;
-    private static final int BALL_SPEED_Y = -5;
+    private static final int BALL_SPEED_X = 4;
+    private static final int BALL_SPEED_Y = -4;
     private static final int PADDLE_START_X = 350;
     private static final int PADDLE_START_Y = 560;
     private static final int PADDLE_WIDTH = 150;
@@ -149,7 +149,7 @@ public class Game {
                 SCREEN_WIDTH, BORDER_THICKNESS), Color.LIGHT_GRAY));
 
         Block deathRegion = new Block(new Rectangle(new Point(0, SCREEN_HEIGHT - BORDER_THICKNESS),
-                SCREEN_WIDTH, BORDER_THICKNESS), Color.RED);
+                SCREEN_WIDTH, BORDER_THICKNESS), Color.BLUE);
         BallRemover ballRemover = new BallRemover(this, this.remainingBalls);
         deathRegion.addHitListener(ballRemover);
         items.add(deathRegion);
