@@ -22,7 +22,6 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     private final Rectangle shape;
     private final java.awt.Color color;
     private final List<HitListener> hitListeners;
-    private boolean recolorsHitter = false;
     /**
      * Constructor for a Block with a given rectangle shape and color.
      *
@@ -66,6 +65,10 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     /**
      * Notifies the block that a collision occurred and calculates the new velocity.
      *
+     * <p>Every collision notifies the registered listeners. The block does not
+     * inspect the hitter before doing so, which leaves each listener free to
+     * decide what a hit means for it.</p>
+     *
      * @param hitter          the ball that hit this block.
      * @param collisionPoint  the point where the collision occurred.
      * @param currentVelocity the velocity of the object hitting the block.
@@ -87,14 +90,8 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
                 - (this.shape.getUpperLeft().getY() + this.shape.getHeight())) < Geometry.epsilon()) {
             dy *= -1;
         }
-        if (!ballColorMatch(hitter)) {
-            this.notifyHit(hitter);
-            if (this.recolorsHitter) {
-                hitter.setColor(this.color);
-            }
-        }
 
-
+        this.notifyHit(hitter);
 
         return new Velocity(dx, dy);
     }
@@ -137,16 +134,6 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     }
 
     /**
-     * Enables (true) or disables (false) recoloring the ball on a
-     * differing-color hit.
-     *
-     * @param value true to recolor the ball on hit.
-     */
-    public void setRecolorsHitter(boolean value) {
-        this.recolorsHitter = value;
-    }
-
-    /**
      * Adds the block to the game as both a sprite and a collidable.
      *
      * @param game the game to add the block to.
@@ -155,16 +142,6 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     public void addToGame(Game game) {
         game.addSprite(this);
         game.addCollidable(this);
-    }
-
-    /**
-     * Checks if the color of the given ball matches the color of this block.
-     *
-     * @param ball the ball to check against
-     * @return true if the colors match, false otherwise
-     */
-    public boolean ballColorMatch(Ball ball) {
-        return this.color.equals(ball.getColor());
     }
 
     /**

@@ -215,7 +215,6 @@ public class Game {
                 double x = rightEdge - (j + 1) * BLOCK_WIDTH;
                 double y = BLOCKS_START_Y + i * BLOCK_HEIGHT;
                 Block newBlock = new Block(new Rectangle(new Point(x, y), BLOCK_WIDTH, BLOCK_HEIGHT), rowColors[i]);
-                newBlock.setRecolorsHitter(true);
                 newBlock.addHitListener(remover);
                 newBlock.addHitListener(tracker);
                 this.remainingBlocks.increase(1);
