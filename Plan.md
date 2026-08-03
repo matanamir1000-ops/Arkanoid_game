@@ -118,9 +118,9 @@ src/highscores/     NEW    ScoreInfo, HighScoresTable
 | Pattern | Where | Why |
 |---|---|---|
 | **Observer** | `HitListener` / `HitNotifier` (existing), extended with `ExplosionListener`, `ParticleHitListener`, `PowerUpDropper` | All world side-effects of a block being hit, without the block knowing about the world |
-| **Strategy** | `BlockBehavior` composed into `Block`; `ParticleEmitter`; `PowerUp` | Varying behaviour without subclassing and without type checks |
+| **Composition + delegation to an interface** | `BlockBehavior` composed into `Block`; `ParticleEmitter`; `PowerUp` | Varying behaviour without subclassing and without type checks |
 | **Decorator** | `KeyPressStoppableAnimation` wrapping any `Animation` | Adds dismiss-on-keypress to screens that don't know about input |
-| **Template / inversion of control** | `AnimationRunner.run(Animation)` | One timing loop drives every screen including the game itself |
+| **Inversion of control** | `AnimationRunner.run(Animation)` | One timing loop drives every screen including the game itself |
 | **Composite** | `SpriteCollection`, `ParticleSystem` | A collection of sprites that is itself a sprite |
 | **Factory** | `BlockFactory` | Keeps level definitions declarative and under `MethodLength` |
 
@@ -499,7 +499,12 @@ Fully designed, not yet approved for execution.
 
 ## Phase 7 — Special blocks via composed `BlockBehavior`
 
-### Recommendation: Strategy (composition), not subclassing
+### Recommendation: composition and delegation, not subclassing
+
+`Block` holds a `BlockBehavior` and delegates to it. Other codebases call this
+Strategy; that name is outside the course canon (see `OOP-Syllabus.md` §5), so
+it is described here by what it actually is — composition, programming to an
+interface, and delegation. The design is unaffected.
 
 1. **`VisibilityModifier` is live**, so a subclass cannot receive `protected Rectangle shape`. A hierarchy would need protected accessors on everything, growing `Block`'s public surface solely for subclasses.
 2. **`Block.hit()` holds delicate edge-threshold reflection math.** Subclasses would duplicate it or call `super.hit(...)` — but `super.hit()` already fires `notifyHit`, so an override wanting to decide "do I die?" *before* notifying must restructure the parent anyway. Composition keeps that math in exactly one place, untouched.

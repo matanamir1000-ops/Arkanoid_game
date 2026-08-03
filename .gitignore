@@ -19,6 +19,7 @@ chaos_workspace/
 *.md
 !README.md
 !Plan.md
+!OOP-Syllabus.md
 
 # Final additions for chaos and backups
 chaos/
