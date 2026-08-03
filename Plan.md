@@ -257,6 +257,7 @@ most recent phase.
 | `phase-1` | `324b70f` | Remove the colour-match gate |
 | `phase-2` | `57e5399` | Rename `Game` to `GameLevel` |
 | `phase-3` | `3a8512c` | Animation framework, GUI lifetime inversion |
+| `phase-4` | `7594f9b` | `LevelInformation`, `Level1Staircase`, level name indicator |
 
 ---
 
