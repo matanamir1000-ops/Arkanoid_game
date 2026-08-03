@@ -166,7 +166,53 @@ git add src/ .gitignore
 git status                      # confirm no out/ or bin/ artifacts staged
 git commit -m "<phase message>"
 git push origin main
+git tag -a phase-N -m "Phase N - <summary>"
+git push origin phase-N
 ```
+
+Because all three gates run before every commit, **every commit on `main` is a
+working, playable state.** There is no point in the history where the project is
+broken. That is what makes rolling back safe.
+
+## Rolling Back a Phase
+
+Each phase is one atomic, tagged commit, so any phase can be undone.
+
+**Mid-phase, before the commit** — nothing has entered history:
+
+```powershell
+git restore src/
+```
+
+**The most recent phase, already pushed** — preferred, because history is preserved
+and no force push is needed:
+
+```powershell
+git revert phase-N
+git push origin main
+```
+
+**Erasing a phase entirely** — rewrites history, requires a force push. Safe only
+because this is a single-contributor repository, and never to be run without
+explicit confirmation:
+
+```powershell
+git reset --hard phase-<N-1>
+git push --force origin main
+```
+
+**Reverting an earlier phase after later phases were built on it is the one risky
+case.** The dependencies in *Ordering Risks* below are not all compile-time — some
+are behavioural. Reverting Phase 0 after Phase 7 exists still compiles, but
+reintroduces the `ConcurrentModificationException` that dense explosion clusters
+trigger. Check the Ordering Risks table before reverting anything that is not the
+most recent phase.
+
+### Phase tags
+
+| Tag | Commit | Phase |
+|---|---|---|
+| `phase-0` | `5f0167b` | Hygiene, seams, repo config |
 
 ---
 
