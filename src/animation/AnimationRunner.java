@@ -19,9 +19,11 @@ import biuoop.Sleeper;
  * </p>
  */
 public class AnimationRunner {
-    private GUI gui;
-    private int framesPerSecond;
-    private Sleeper sleeper;
+    private static final int MILLISECONDS_PER_SECOND = 1000;
+
+    private final GUI gui;
+    private final int millisecondsPerFrame;
+    private final Sleeper sleeper;
 
     /**
      * Constructor.
@@ -31,7 +33,7 @@ public class AnimationRunner {
      */
     public AnimationRunner(GUI gui, int framesPerSecond) {
         this.gui = gui;
-        this.framesPerSecond = framesPerSecond;
+        this.millisecondsPerFrame = MILLISECONDS_PER_SECOND / framesPerSecond;
         this.sleeper = new Sleeper();
     }
 
@@ -41,8 +43,6 @@ public class AnimationRunner {
      * @param animation the animation to drive.
      */
     public void run(Animation animation) {
-        int millisecondsPerFrame = 1000 / this.framesPerSecond;
-
         while (!animation.shouldStop()) {
             long startTime = System.currentTimeMillis();
             DrawSurface d = this.gui.getDrawSurface();
@@ -50,7 +50,7 @@ public class AnimationRunner {
             this.gui.show(d);
 
             long usedTime = System.currentTimeMillis() - startTime;
-            long milliSecondLeftToSleep = millisecondsPerFrame - usedTime;
+            long milliSecondLeftToSleep = this.millisecondsPerFrame - usedTime;
             if (milliSecondLeftToSleep > 0) {
                 this.sleeper.sleepFor(milliSecondLeftToSleep);
             }

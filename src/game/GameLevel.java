@@ -5,7 +5,6 @@ import animation.AnimationRunner;
 import animation.KeyPressStoppableAnimation;
 import animation.PauseScreen;
 import biuoop.DrawSurface;
-import biuoop.GUI;
 import biuoop.KeyboardSensor;
 import collision.Collidable;
 import collision.GameEnvironment;
@@ -26,26 +25,26 @@ import java.util.List;
  * <p>
  * The level is an Animation: it knows how to draw and advance one frame and
  * when it is finished, but the timing loop that calls it lives in the injected
- * AnimationRunner. The window is injected too rather than constructed here, so
- * that a session running several levels reuses one window instead of opening a
- * new one per level.
+ * AnimationRunner. The level owns neither the window nor the screen dimensions;
+ * both belong to whoever started the session, so that running several levels
+ * reuses one window instead of opening a new one per level.
  * </p>
  */
 public class GameLevel implements Animation {
+    private static final String PAUSE_KEY_LOWER = "p";
+    private static final String PAUSE_KEY_UPPER = "P";
+
+    private final AnimationRunner runner;
+    private final KeyboardSensor keyboard;
+    private final int screenWidth;
+    private final int screenHeight;
     private SpriteCollection sprites;
     private GameEnvironment environment;
-    private GUI gui;
-    private AnimationRunner runner;
-    private KeyboardSensor keyboard;
-    private boolean running;
     private Counter remainingBlocks;
     private Counter remainingBalls;
     private Counter score;
     private BlockRemover blockRemover;
     private ScoreTrackingListener scoreTracker;
-    // Constants for screen dimensions
-    private static final int SCREEN_WIDTH = 800;
-    private static final int SCREEN_HEIGHT = 600;
     private static final int BORDER_THICKNESS = 20;
 
     // --- Background color constants ---
@@ -80,15 +79,16 @@ public class GameLevel implements Animation {
      * Initializes the internal collections and stores the injected session-wide
      * collaborators.
      *
-     * @param runner   the runner that will drive this level's frames.
-     * @param keyboard the keyboard shared by the paddle and the pause screen.
-     * @param gui      the window this level draws into.
+     * @param runner       the runner that will drive this level's frames.
+     * @param keyboard     the keyboard shared by the paddle and the pause screen.
+     * @param screenWidth  the playfield width, in pixels.
+     * @param screenHeight the playfield height, in pixels.
      */
-    public GameLevel(AnimationRunner runner, KeyboardSensor keyboard, GUI gui) {
+    public GameLevel(AnimationRunner runner, KeyboardSensor keyboard, int screenWidth, int screenHeight) {
         this.runner = runner;
         this.keyboard = keyboard;
-        this.gui = gui;
-        this.running = false;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
@@ -140,7 +140,7 @@ public class GameLevel implements Animation {
      */
     private void createBackground() {
         this.addSprite(new Background(BACKGROUND_COLOR, BACKGROUND_ORIGIN_X,
-                BACKGROUND_ORIGIN_Y, SCREEN_WIDTH, SCREEN_HEIGHT));
+                BACKGROUND_ORIGIN_Y, this.screenWidth, this.screenHeight));
     }
 
     /**
@@ -153,7 +153,7 @@ public class GameLevel implements Animation {
     private void createListenersAndIndicators(List<GameItem> items) {
         this.blockRemover = new BlockRemover(this, this.remainingBlocks);
         this.scoreTracker = new ScoreTrackingListener(this.score);
-        Rectangle scoreRect = new Rectangle(new Point(0, 0), SCREEN_WIDTH, SCORE_INDICATOR_HEIGHT);
+        Rectangle scoreRect = new Rectangle(new Point(0, 0), this.screenWidth, SCORE_INDICATOR_HEIGHT);
         items.add(new ScoreIndicator(this.score, scoreRect));
     }
 
@@ -166,20 +166,20 @@ public class GameLevel implements Animation {
      */
     private void createBorders(List<GameItem> items) {
         items.add(new Block(new Rectangle(new Point(0, SCORE_INDICATOR_HEIGHT),
-                SCREEN_WIDTH, BORDER_THICKNESS), Color.LIGHT_GRAY));
+                this.screenWidth, BORDER_THICKNESS), Color.LIGHT_GRAY));
 
-        Block deathRegion = new Block(new Rectangle(new Point(0, SCREEN_HEIGHT - BORDER_THICKNESS),
-                SCREEN_WIDTH, BORDER_THICKNESS), Color.BLUE);
+        Block deathRegion = new Block(new Rectangle(new Point(0, this.screenHeight - BORDER_THICKNESS),
+                this.screenWidth, BORDER_THICKNESS), Color.BLUE);
         BallRemover ballRemover = new BallRemover(this, this.remainingBalls);
         deathRegion.addHitListener(ballRemover);
         items.add(deathRegion);
 
         int sideBordersStartY = SCORE_INDICATOR_HEIGHT + BORDER_THICKNESS;
-        int sideBordersHeight = SCREEN_HEIGHT - SCORE_INDICATOR_HEIGHT - (2 * BORDER_THICKNESS);
+        int sideBordersHeight = this.screenHeight - SCORE_INDICATOR_HEIGHT - (2 * BORDER_THICKNESS);
 
         items.add(new Block(new Rectangle(new Point(0, sideBordersStartY),
                 BORDER_THICKNESS, sideBordersHeight), Color.LIGHT_GRAY));
-        items.add(new Block(new Rectangle(new Point(SCREEN_WIDTH - BORDER_THICKNESS, sideBordersStartY),
+        items.add(new Block(new Rectangle(new Point(this.screenWidth - BORDER_THICKNESS, sideBordersStartY),
                 BORDER_THICKNESS, sideBordersHeight), Color.LIGHT_GRAY));
     }
 
@@ -226,7 +226,7 @@ public class GameLevel implements Animation {
      */
     private List<Block> createBlockPattern(HitListener remover, HitListener tracker) {
         List<Block> rowOfBlocks = new ArrayList<>();
-        int rightEdge = SCREEN_WIDTH - BORDER_THICKNESS;
+        int rightEdge = this.screenWidth - BORDER_THICKNESS;
 
         Color[] rowColors = {Color.GRAY, Color.RED, Color.YELLOW, Color.CYAN, Color.PINK, Color.GREEN};
         for (int i = 0; i < rowColors.length; i++) {
@@ -247,12 +247,11 @@ public class GameLevel implements Animation {
      * Run the level -- hand this level to the runner and report the outcome.
      * <p>
      * The timing loop that used to live here now lives in AnimationRunner. What
-     * remains is the part that is genuinely about this level: arming it, and
-     * deciding what the terminal state means once the runner returns.
+     * remains is the part that is genuinely about this level: handing itself
+     * over, and deciding what the terminal state means once the runner returns.
      * </p>
      */
     public void run() {
-        this.running = true;
         this.runner.run(this);
 
         if (this.remainingBlocks.getValue() <= 0) {
@@ -261,16 +260,10 @@ public class GameLevel implements Animation {
         } else {
             System.out.println("Game Over.\nYour score is: " + this.score.getValue());
         }
-        this.gui.close();
     }
 
     /**
      * Draws and advances the level by one frame.
-     * <p>
-     * Pausing is handled by running a second animation from inside this frame.
-     * The runner is reentrant, so the pause screen simply takes over the window
-     * until it is dismissed and then this frame finishes normally.
-     * </p>
      *
      * @param d the surface to draw this frame on.
      */
@@ -278,20 +271,41 @@ public class GameLevel implements Animation {
     public void doOneFrame(DrawSurface d) {
         this.sprites.drawAllOn(d);
         this.sprites.notifyAllTimePassed();
+        this.handlePauseKey();
+    }
 
-        if (this.keyboard.isPressed("p") || this.keyboard.isPressed("P")) {
+    /**
+     * Opens the pause screen if the pause key is held, and blocks here until it
+     * is dismissed.
+     * <p>
+     * This runs a second animation from inside the current frame. The runner is
+     * reentrant, so the pause screen takes over the window until dismissed and
+     * then this frame finishes normally. One consequence is worth knowing: the
+     * surface belonging to this frame was already drawn before the pause began,
+     * and the outer runner shows it only after the pause ends, so a single stale
+     * frame flashes on resume.
+     * </p>
+     */
+    private void handlePauseKey() {
+        if (this.keyboard.isPressed(PAUSE_KEY_LOWER) || this.keyboard.isPressed(PAUSE_KEY_UPPER)) {
             this.runner.run(new KeyPressStoppableAnimation(
                     this.keyboard, KeyboardSensor.SPACE_KEY, new PauseScreen()));
         }
-
-        if (this.remainingBlocks.getValue() <= 0 || this.remainingBalls.getValue() <= 0) {
-            this.running = false;
-        }
     }
 
+    /**
+     * The level is over once every block is cleared or every ball is lost.
+     * <p>
+     * This is derived from the counters rather than stored in a flag, so there
+     * is exactly one definition of "finished" and the object is valid from
+     * construction onward. The runner evaluates it before each frame.
+     * </p>
+     *
+     * @return true once the level has ended.
+     */
     @Override
     public boolean shouldStop() {
-        return !this.running;
+        return this.remainingBlocks.getValue() <= 0 || this.remainingBalls.getValue() <= 0;
     }
 
     /**

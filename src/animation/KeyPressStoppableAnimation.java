@@ -11,19 +11,19 @@ import biuoop.KeyboardSensor;
  * free of keyboard logic entirely.
  * </p>
  * <p>
- * The isAlreadyPressed guard exists because biuoop reports only that a key is
+ * The waitingForRelease guard exists because biuoop reports only that a key is
  * down, never that it was released. Without it, the key press that dismissed
  * one screen would still be held when the next screen opened and would dismiss
- * that one on its very first frame. Starting the flag at true means a key held
- * from before this animation began is ignored until it is released and pressed
- * again.
+ * that one on its very first frame. The flag starts true, meaning "a key may
+ * still be held over from the previous screen"; it is only cleared once the key
+ * is observed to be up, and only then can a press stop this animation.
  * </p>
  */
 public class KeyPressStoppableAnimation implements Animation {
-    private KeyboardSensor sensor;
-    private String key;
-    private Animation animation;
-    private boolean isAlreadyPressed;
+    private final KeyboardSensor sensor;
+    private final String key;
+    private final Animation animation;
+    private boolean waitingForRelease;
     private boolean stop;
 
     /**
@@ -37,7 +37,7 @@ public class KeyPressStoppableAnimation implements Animation {
         this.sensor = sensor;
         this.key = key;
         this.animation = animation;
-        this.isAlreadyPressed = true;
+        this.waitingForRelease = true;
         this.stop = false;
     }
 
@@ -45,11 +45,11 @@ public class KeyPressStoppableAnimation implements Animation {
     public void doOneFrame(DrawSurface d) {
         this.animation.doOneFrame(d);
         if (this.sensor.isPressed(this.key)) {
-            if (!this.isAlreadyPressed) {
+            if (!this.waitingForRelease) {
                 this.stop = true;
             }
         } else {
-            this.isAlreadyPressed = false;
+            this.waitingForRelease = false;
         }
     }
 

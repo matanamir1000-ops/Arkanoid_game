@@ -23,8 +23,9 @@ public class Ass5Game {
     public static void main(String[] args) {
         GUI gui = new GUI(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT);
         AnimationRunner runner = new AnimationRunner(gui, FRAMES_PER_SECOND);
-        GameLevel game = new GameLevel(runner, gui.getKeyboardSensor(), gui);
+        GameLevel game = new GameLevel(runner, gui.getKeyboardSensor(), SCREEN_WIDTH, SCREEN_HEIGHT);
         game.initialize();
         game.run();
+        gui.close();
     }
 }
