@@ -25,6 +25,14 @@ public class Level1Staircase implements LevelInformation {
     private static final int BALL_SPEED_X = 4;
     private static final int BALL_SPEED_Y = -4;
 
+    // No ball may be launched perfectly vertically. The paddle's centre region
+    // reflects a ball straight back the way it came, preserving dx -- so a ball
+    // with dx == 0 that meets a motionless paddle bounces between the paddle and
+    // the top border forever, and the level can never end. Every other bounce in
+    // the game preserves or flips dx but never zeroes it, so giving the third
+    // ball a slight drift at launch is enough to rule the stalemate out for good.
+    private static final int BALL_DRIFT_X = 2;
+
     private static final int PADDLE_SPEED = 7;
     private static final int PADDLE_WIDTH = 150;
 
@@ -69,7 +77,7 @@ public class Level1Staircase implements LevelInformation {
         List<Velocity> velocities = new ArrayList<>();
         velocities.add(new Velocity(BALL_SPEED_X, BALL_SPEED_Y));
         velocities.add(new Velocity(-BALL_SPEED_X, BALL_SPEED_Y));
-        velocities.add(new Velocity(0, BALL_SPEED_Y));
+        velocities.add(new Velocity(BALL_DRIFT_X, BALL_SPEED_Y));
         return velocities;
     }
 
