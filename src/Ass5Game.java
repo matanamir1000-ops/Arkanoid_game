@@ -1,6 +1,7 @@
 import animation.AnimationRunner;
 import biuoop.GUI;
 import game.GameLevel;
+import levels.Level1Staircase;
 
 /**
  * The main entry point for the Arkanoid game.
@@ -23,7 +24,8 @@ public class Ass5Game {
     public static void main(String[] args) {
         GUI gui = new GUI(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT);
         AnimationRunner runner = new AnimationRunner(gui, FRAMES_PER_SECOND);
-        GameLevel game = new GameLevel(runner, gui.getKeyboardSensor(), SCREEN_WIDTH, SCREEN_HEIGHT);
+        GameLevel game = new GameLevel(new Level1Staircase(SCREEN_WIDTH, SCREEN_HEIGHT), runner,
+                gui.getKeyboardSensor(), SCREEN_WIDTH, SCREEN_HEIGHT);
         game.initialize();
         game.run();
         gui.close();

@@ -33,15 +33,17 @@ public class ScoreIndicator implements Sprite, GameItem {
     }
 
     /**
-     * Draws the score indicator, including its background and the text,
-     * on the given DrawSurface.
+     * Draws the score text on the given DrawSurface.
+     * <p>
+     * The strip it sits in is painted by a separate background sprite, so this
+     * indicator draws only its own text and does not care what else shares the
+     * strip with it.
+     * </p>
      *
      * @param d the DrawSurface to draw on.
      */
     @Override
     public void drawOn(DrawSurface d) {
-        this.rect.drawOn(d, Color.LIGHT_GRAY);
-
         int centerX = (int) (this.rect.getUpperLeft().getX() + (this.rect.getWidth() / 2));
         int centerY = (int) (this.rect.getUpperLeft().getY() + (this.rect.getHeight() / 2));
 

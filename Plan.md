@@ -431,6 +431,37 @@ This is a reentrant call into the runner from inside a frame. It is the standard
 
 **Commit** — `feat: introduce LevelInformation and extract level 1 definition`
 
+**Deviations from this plan, made during execution:**
+
+- The class is `Level1Staircase`, not `Level1DirectHit`. "Direct Hit" names a
+  single-block level; this one is the existing 57-block staircase, and a name
+  that lies to the reader defeats the point of the OOP gate.
+- The paddle now starts centred, `(screenWidth - paddleWidth) / 2` = 325. The
+  old hardcoded `350` was arbitrary and cannot survive a level-supplied width.
+  Gameplay is otherwise unchanged; the start position moved 25 px left.
+- The top strip is painted by its own `Background` sprite. Previously
+  `ScoreIndicator` painted it, which meant `LevelNameIndicator` had to be added
+  after it or be covered — a correctness rule enforced only by list order.
+- `remainingBalls` is driven by `initialBallVelocities().size()`, not
+  `numberOfBalls()`. The two encode the same fact and can disagree; only the
+  velocity list can actually be honoured.
+
+**Carried forward — two real findings from the G4 review, both deliberately deferred:**
+
+1. **`800` / `20` are declared in three places** — `Ass5Game`, `GameLevel`
+   (injected, fine), and `Paddle` (hardcoded, for its screen-wrap bounds).
+   Phase 4 removed the copy it would have added in `Level1Staircase` by
+   injecting the dimensions through its constructor. `Paddle` is the last
+   holdout and wants its own commit, because fixing it means deciding who owns
+   playfield geometry.
+2. **`game` holds two unrelated things** — the orchestrator (`GameLevel`, the
+   listeners, the counters) and the shared abstractions everything draws through
+   (`Sprite`, `GameItem`, `Background`). Every package needs the second, so every
+   package imports the first; that is the real cause of both the `levels ↔ game`
+   cycle introduced here and the older `sprites ↔ game` one. Moving those three
+   types into their own package breaks both at once and is a mechanical
+   import-only change — worth its own commit, not a rider on a feature phase.
+
 ---
 
 ## Phase 5 — Lives, `GameFlow`, countdown, multi-level

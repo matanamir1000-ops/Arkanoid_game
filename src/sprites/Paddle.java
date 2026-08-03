@@ -21,7 +21,6 @@ import java.awt.Color;
  */
 public class Paddle implements Sprite, Collidable, GameItem {
     // --- Movement and Screen Constants ---
-    private static final int STEP = 7;
     private static final int SCREEN_WIDTH = 800;
     private static final int BORDER_THICKNESS = 20;
     private static final int INNER_LEFT = BORDER_THICKNESS;
@@ -41,6 +40,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
     private biuoop.KeyboardSensor keyboard;
     private Rectangle shape;
     private Color color;
+    private final int step;
     private GameLevel game;
     private PaddleGhost ghost;
 
@@ -50,11 +50,13 @@ public class Paddle implements Sprite, Collidable, GameItem {
      * @param keyboard the keyboard sensor to read user key presses.
      * @param shape    the rectangle shape of the paddle.
      * @param color    the color of the paddle.
+     * @param step     how many pixels the paddle moves per frame while a key is held.
      */
-    public Paddle(biuoop.KeyboardSensor keyboard, Rectangle shape, Color color) {
+    public Paddle(biuoop.KeyboardSensor keyboard, Rectangle shape, Color color, int step) {
         this.keyboard = keyboard;
         this.shape = new Rectangle(shape.getUpperLeft(), shape.getWidth(), shape.getHeight());
         this.color = color;
+        this.step = step;
     }
 
     /**
@@ -63,7 +65,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
      * snap-on-full-crossover) is delegated to {@link #handleScreenWrap()}.
      */
     public void moveLeft() {
-        double nextX = this.shape.getUpperLeft().getX() - STEP;
+        double nextX = this.shape.getUpperLeft().getX() - this.step;
         this.shape = new Rectangle(new Point(nextX, this.shape.getUpperLeft().getY()),
                 this.shape.getWidth(), this.shape.getHeight());
         this.handleScreenWrap();
@@ -75,7 +77,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
      * snap-on-full-crossover) is delegated to {@link #handleScreenWrap()}.
      */
     public void moveRight() {
-        double nextX = this.shape.getUpperLeft().getX() + STEP;
+        double nextX = this.shape.getUpperLeft().getX() + this.step;
         this.shape = new Rectangle(new Point(nextX, this.shape.getUpperLeft().getY()),
                 this.shape.getWidth(), this.shape.getHeight());
         this.handleScreenWrap();

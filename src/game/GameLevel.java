@@ -8,11 +8,13 @@ import biuoop.DrawSurface;
 import biuoop.KeyboardSensor;
 import collision.Collidable;
 import collision.GameEnvironment;
-import collision.HitListener;
 import geometry.Point;
 import geometry.Rectangle;
+import geometry.Velocity;
+import levels.LevelInformation;
 import sprites.Ball;
 import sprites.Block;
+import sprites.LevelNameIndicator;
 import sprites.Paddle;
 import sprites.ScoreIndicator;
 
@@ -29,11 +31,37 @@ import java.util.List;
  * both belong to whoever started the session, so that running several levels
  * reuses one window instead of opening a new one per level.
  * </p>
+ * <p>
+ * What the level contains is not decided here either. A LevelInformation
+ * supplies the blocks, balls, paddle dimensions and backdrop; this class turns
+ * that description into a running level by wiring in the counters, the listeners
+ * and the playfield borders, which are the same for every level.
+ * </p>
  */
 public class GameLevel implements Animation {
     private static final String PAUSE_KEY_LOWER = "p";
     private static final String PAUSE_KEY_UPPER = "P";
 
+    private static final int BORDER_THICKNESS = 20;
+    private static final int SCORE_INDICATOR_HEIGHT = 20;
+    private static final Color TOP_STRIP_COLOR = Color.LIGHT_GRAY;
+    private static final int LEVEL_CLEAR_BONUS = 100;
+
+    // --- Playfield defaults ---
+    // These are the parts of a level that do NOT vary between levels, which is
+    // exactly why they live here and not on LevelInformation. The level decides
+    // how many balls there are and how fast; the playfield decides where they
+    // start and what they look like. If a level ever needs a light backdrop,
+    // BALL_COLOR is the first of these that will have to move to the level.
+    private static final int BALL_RADIUS = 5;
+    private static final Color BALL_COLOR = Color.WHITE;
+    private static final int BALL_START_Y = 500;
+    private static final int BALL_STACK_GAP = 20;
+    private static final int PADDLE_START_Y = 560;
+    private static final int PADDLE_HEIGHT = 10;
+    private static final Color PADDLE_COLOR = Color.ORANGE;
+
+    private final LevelInformation levelInfo;
     private final AnimationRunner runner;
     private final KeyboardSensor keyboard;
     private final int screenWidth;
@@ -45,46 +73,21 @@ public class GameLevel implements Animation {
     private Counter score;
     private BlockRemover blockRemover;
     private ScoreTrackingListener scoreTracker;
-    private static final int BORDER_THICKNESS = 20;
-
-    // --- Background color constants ---
-    private static final int BACKGROUND_ORIGIN_X = 0;
-    private static final int BACKGROUND_ORIGIN_Y = 0;
-    private static final java.awt.Color BACKGROUND_COLOR = java.awt.Color.BLACK;
-
-    // --- Game Item Setup Constants ---
-    private static final int BALL_START_X = 400;
-    private static final int BALL_1_START_Y = 500;
-    private static final int BALL_2_START_Y = 480;
-    private static final int BALL_3_START_Y = 460;
-    private static final int BALL_RADIUS = 5;
-    private static final int BALL_SPEED_X = 4;
-    private static final int BALL_SPEED_Y = -4;
-    private static final int PADDLE_START_X = 350;
-    private static final int PADDLE_START_Y = 560;
-    private static final int PADDLE_WIDTH = 150;
-    private static final int PADDLE_HEIGHT = 10;
-    private static final int LEVEL_CLEAR_BONUS = 100;
-
-
-    // --- Block Pattern Constants ---
-    private static final int BLOCKS_IN_FIRST_ROW = 12;
-    private static final int BLOCK_WIDTH = 50;
-    private static final int BLOCK_HEIGHT = 20;
-    private static final int BLOCKS_START_Y = 150;
-    private static final int SCORE_INDICATOR_HEIGHT = 20;
 
     /**
      * Constructor for a new GameLevel.
      * Initializes the internal collections and stores the injected session-wide
      * collaborators.
      *
+     * @param levelInfo    the definition of what this level contains.
      * @param runner       the runner that will drive this level's frames.
      * @param keyboard     the keyboard shared by the paddle and the pause screen.
      * @param screenWidth  the playfield width, in pixels.
      * @param screenHeight the playfield height, in pixels.
      */
-    public GameLevel(AnimationRunner runner, KeyboardSensor keyboard, int screenWidth, int screenHeight) {
+    public GameLevel(LevelInformation levelInfo, AnimationRunner runner, KeyboardSensor keyboard,
+                     int screenWidth, int screenHeight) {
+        this.levelInfo = levelInfo;
         this.runner = runner;
         this.keyboard = keyboard;
         this.screenWidth = screenWidth;
@@ -115,16 +118,21 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Initialize a new game: create the background, Blocks, Ball, Paddle and borders.
-     * Delegates each concern to a focused helper and then registers every GameItem
-     * polymorphically in a single pass.
+     * Initialize the level: read the definition, wire in the parts that are the
+     * same for every level, and register every GameItem polymorphically in a
+     * single pass.
+     * <p>
+     * The backdrop is added straight to the sprite collection before anything
+     * else so that it is drawn underneath every other sprite each frame.
+     * </p>
      */
     public void initialize() {
-        this.createBackground();
+        this.addSprite(this.levelInfo.getBackground());
+        this.addSprite(new Background(TOP_STRIP_COLOR, 0, 0, this.screenWidth, SCORE_INDICATOR_HEIGHT));
         List<GameItem> items = new ArrayList<>();
         this.createListenersAndIndicators(items);
         this.createBorders(items);
-        items.addAll(this.createBlockPattern(this.blockRemover, this.scoreTracker));
+        this.createBlocks(items);
         this.createBalls(items);
         this.createPaddle(items);
 
@@ -134,27 +142,23 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Adds the solid background sprite directly to the sprite collection.
-     * The background is registered first so that it is drawn underneath every
-     * other sprite each frame.
-     */
-    private void createBackground() {
-        this.addSprite(new Background(BACKGROUND_COLOR, BACKGROUND_ORIGIN_X,
-                BACKGROUND_ORIGIN_Y, this.screenWidth, this.screenHeight));
-    }
-
-    /**
-     * Creates the shared block/score listeners and the on-screen score indicator.
+     * Creates the shared block/score listeners and the two top-strip indicators.
      * The BlockRemover and ScoreTrackingListener are stored on the GameLevel instance so
-     * createBlockPattern can attach the same instances to every gameplay block.
+     * createBlocks can attach the same instances to every gameplay block.
+     * <p>
+     * Both indicators draw text only; the strip they sit in is painted by its
+     * own background sprite in initialize(), so the order they are added in does
+     * not matter.
+     * </p>
      *
-     * @param items the in-progress list of GameItems to append the indicator to.
+     * @param items the in-progress list of GameItems to append the indicators to.
      */
     private void createListenersAndIndicators(List<GameItem> items) {
         this.blockRemover = new BlockRemover(this, this.remainingBlocks);
         this.scoreTracker = new ScoreTrackingListener(this.score);
-        Rectangle scoreRect = new Rectangle(new Point(0, 0), this.screenWidth, SCORE_INDICATOR_HEIGHT);
-        items.add(new ScoreIndicator(this.score, scoreRect));
+        Rectangle topStrip = new Rectangle(new Point(0, 0), this.screenWidth, SCORE_INDICATOR_HEIGHT);
+        items.add(new ScoreIndicator(this.score, topStrip));
+        items.add(new LevelNameIndicator(this.levelInfo.levelName(), topStrip));
     }
 
     /**
@@ -184,63 +188,68 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Creates the three starting balls with their fixed launch velocities and
-     * increments the remainingBalls counter for each.
+     * Creates the starting balls described by the level and increments the
+     * remainingBalls counter for each.
+     * <p>
+     * The velocity list is the single source of truth for how many balls there
+     * are. LevelInformation also exposes numberOfBalls(), but the two could
+     * disagree, and only one of them can actually be honoured -- a ball with no
+     * velocity is not a ball. Where the balls start is a playfield concern, so
+     * it is decided here: they are stacked upwards from just above the paddle so
+     * that they do not begin inside one another.
+     * </p>
      *
      * @param items the in-progress list of GameItems to append the balls to.
      */
     private void createBalls(List<GameItem> items) {
-        Ball ball = new Ball(new Point(BALL_START_X, BALL_1_START_Y), BALL_RADIUS, Color.WHITE);
-        ball.setVelocity(BALL_SPEED_X, BALL_SPEED_Y);
-        items.add(ball);
-        this.remainingBalls.increase(1);
+        List<Velocity> velocities = this.levelInfo.initialBallVelocities();
+        int centreX = this.screenWidth / 2;
 
-        Ball ball2 = new Ball(new Point(BALL_START_X, BALL_2_START_Y), BALL_RADIUS, Color.WHITE);
-        ball2.setVelocity(-BALL_SPEED_X, BALL_SPEED_Y);
-        items.add(ball2);
-        this.remainingBalls.increase(1);
-
-        Ball ball3 = new Ball(new Point(BALL_START_X, BALL_3_START_Y), BALL_RADIUS, Color.WHITE);
-        ball3.setVelocity(0, BALL_SPEED_Y);
-        items.add(ball3);
-        this.remainingBalls.increase(1);
+        for (int i = 0; i < velocities.size(); i++) {
+            Point start = new Point(centreX, BALL_START_Y - i * BALL_STACK_GAP);
+            Ball ball = new Ball(start, BALL_RADIUS, BALL_COLOR);
+            ball.setVelocity(velocities.get(i));
+            items.add(ball);
+            this.remainingBalls.increase(1);
+        }
     }
 
     /**
-     * Creates the player-controlled paddle bound to the GUI's keyboard sensor.
+     * Creates the player-controlled paddle, sized and paced by the level and
+     * centred horizontally on the playfield.
      *
      * @param items the in-progress list of GameItems to append the paddle to.
      */
     private void createPaddle(List<GameItem> items) {
-        Rectangle paddleRect = new Rectangle(new Point(PADDLE_START_X, PADDLE_START_Y),
-                PADDLE_WIDTH, PADDLE_HEIGHT);
-        items.add(new Paddle(this.keyboard, paddleRect, java.awt.Color.ORANGE));
+        int paddleWidth = this.levelInfo.paddleWidth();
+        int paddleX = (this.screenWidth - paddleWidth) / 2;
+        Rectangle paddleRect = new Rectangle(new Point(paddleX, PADDLE_START_Y),
+                paddleWidth, PADDLE_HEIGHT);
+        items.add(new Paddle(this.keyboard, paddleRect, PADDLE_COLOR, this.levelInfo.paddleSpeed()));
     }
 
     /**
-     * Creates a staircase pattern of blocks.
+     * Takes the blocks the level defines and makes them part of a running game
+     * by attaching the removal and scoring listeners to each one.
+     * <p>
+     * The win condition is read from the level rather than counted from the
+     * list. Those two numbers are allowed to differ: a level may hold blocks
+     * that are never meant to be destroyed, and clearing the level must not
+     * wait for them. Today every block still gets a BlockRemover, so no block
+     * actually survives a hit -- the guard that makes indestructible blocks real
+     * arrives together with block behaviours, and this counter is the seam it
+     * will use.
+     * </p>
      *
-     * @param remover the listener that removes a block from the game once it is hit.
-     * @param tracker the listener that awards points once a block is hit.
-     * @return a list of blocks representing the pattern.
+     * @param items the in-progress list of GameItems to append the blocks to.
      */
-    private List<Block> createBlockPattern(HitListener remover, HitListener tracker) {
-        List<Block> rowOfBlocks = new ArrayList<>();
-        int rightEdge = this.screenWidth - BORDER_THICKNESS;
-
-        Color[] rowColors = {Color.GRAY, Color.RED, Color.YELLOW, Color.CYAN, Color.PINK, Color.GREEN};
-        for (int i = 0; i < rowColors.length; i++) {
-            for (int j = 0; j < BLOCKS_IN_FIRST_ROW - i; j++) {
-                double x = rightEdge - (j + 1) * BLOCK_WIDTH;
-                double y = BLOCKS_START_Y + i * BLOCK_HEIGHT;
-                Block newBlock = new Block(new Rectangle(new Point(x, y), BLOCK_WIDTH, BLOCK_HEIGHT), rowColors[i]);
-                newBlock.addHitListener(remover);
-                newBlock.addHitListener(tracker);
-                this.remainingBlocks.increase(1);
-                rowOfBlocks.add(newBlock);
-            }
+    private void createBlocks(List<GameItem> items) {
+        for (Block block : this.levelInfo.blocks()) {
+            block.addHitListener(this.blockRemover);
+            block.addHitListener(this.scoreTracker);
+            items.add(block);
         }
-        return rowOfBlocks;
+        this.remainingBlocks.increase(this.levelInfo.numberOfBlocksToRemove());
     }
 
     /**
