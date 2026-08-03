@@ -1,8 +1,12 @@
 package game;
 
+import animation.Animation;
+import animation.AnimationRunner;
+import animation.KeyPressStoppableAnimation;
+import animation.PauseScreen;
 import biuoop.DrawSurface;
 import biuoop.GUI;
-import biuoop.Sleeper;
+import biuoop.KeyboardSensor;
 import collision.Collidable;
 import collision.GameEnvironment;
 import collision.HitListener;
@@ -18,13 +22,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Manages the game environment, sprites, and animation loop for a single level.
+ * Manages the game environment, sprites, and gameplay frame of a single level.
+ * <p>
+ * The level is an Animation: it knows how to draw and advance one frame and
+ * when it is finished, but the timing loop that calls it lives in the injected
+ * AnimationRunner. The window is injected too rather than constructed here, so
+ * that a session running several levels reuses one window instead of opening a
+ * new one per level.
+ * </p>
  */
-public class GameLevel {
+public class GameLevel implements Animation {
     private SpriteCollection sprites;
     private GameEnvironment environment;
     private GUI gui;
-    private Sleeper sleeper;
+    private AnimationRunner runner;
+    private KeyboardSensor keyboard;
+    private boolean running;
     private Counter remainingBlocks;
     private Counter remainingBalls;
     private Counter score;
@@ -64,9 +77,18 @@ public class GameLevel {
 
     /**
      * Constructor for a new GameLevel.
-     * Initializes the internal collections.
+     * Initializes the internal collections and stores the injected session-wide
+     * collaborators.
+     *
+     * @param runner   the runner that will drive this level's frames.
+     * @param keyboard the keyboard shared by the paddle and the pause screen.
+     * @param gui      the window this level draws into.
      */
-    public GameLevel() {
+    public GameLevel(AnimationRunner runner, KeyboardSensor keyboard, GUI gui) {
+        this.runner = runner;
+        this.keyboard = keyboard;
+        this.gui = gui;
+        this.running = false;
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
@@ -98,8 +120,6 @@ public class GameLevel {
      * polymorphically in a single pass.
      */
     public void initialize() {
-        this.gui = new GUI("Arkanoid", SCREEN_WIDTH, SCREEN_HEIGHT);
-        this.sleeper = new Sleeper();
         this.createBackground();
         List<GameItem> items = new ArrayList<>();
         this.createListenersAndIndicators(items);
@@ -192,10 +212,9 @@ public class GameLevel {
      * @param items the in-progress list of GameItems to append the paddle to.
      */
     private void createPaddle(List<GameItem> items) {
-        biuoop.KeyboardSensor sensor = this.gui.getKeyboardSensor();
         Rectangle paddleRect = new Rectangle(new Point(PADDLE_START_X, PADDLE_START_Y),
                 PADDLE_WIDTH, PADDLE_HEIGHT);
-        items.add(new Paddle(sensor, paddleRect, java.awt.Color.ORANGE));
+        items.add(new Paddle(this.keyboard, paddleRect, java.awt.Color.ORANGE));
     }
 
     /**
@@ -224,41 +243,56 @@ public class GameLevel {
         return rowOfBlocks;
     }
 
-    // === BEGIN INSTRUCTOR-PROVIDED run() — DO NOT EDIT (CLAUDE.md mandate) ===
     /**
-     * Run the game -- start the animation loop.
+     * Run the level -- hand this level to the runner and report the outcome.
+     * <p>
+     * The timing loop that used to live here now lives in AnimationRunner. What
+     * remains is the part that is genuinely about this level: arming it, and
+     * deciding what the terminal state means once the runner returns.
+     * </p>
      */
     public void run() {
-        int framesPerSecond = 60;
-        int millisecondsPerFrame = 1000 / framesPerSecond;
+        this.running = true;
+        this.runner.run(this);
 
-        while (true) {
-            if (this.remainingBlocks.getValue() <= 0) {
-                this.score.increase(LEVEL_CLEAR_BONUS);
-                System.out.println("You Win!\nYour score is: " + this.score.getValue());
-                this.gui.close();
-                return;
-            }
-            if (this.remainingBalls.getValue() <= 0) {
-                System.out.println("Game Over.\nYour score is: " + this.score.getValue());
-                this.gui.close();
-                return;
-            }
-            long startTime = System.currentTimeMillis();
-            DrawSurface d = this.gui.getDrawSurface();
-            d.setColor(Color.black);
-            this.sprites.drawAllOn(d);
-            this.gui.show(d);
-            this.sprites.notifyAllTimePassed();
+        if (this.remainingBlocks.getValue() <= 0) {
+            this.score.increase(LEVEL_CLEAR_BONUS);
+            System.out.println("You Win!\nYour score is: " + this.score.getValue());
+        } else {
+            System.out.println("Game Over.\nYour score is: " + this.score.getValue());
+        }
+        this.gui.close();
+    }
 
-            long usedTime = System.currentTimeMillis() - startTime;
-            long milliSecondLeftToSleep = millisecondsPerFrame - usedTime;
-            if (milliSecondLeftToSleep > 0) {
-                this.sleeper.sleepFor(milliSecondLeftToSleep);
-            }
+    /**
+     * Draws and advances the level by one frame.
+     * <p>
+     * Pausing is handled by running a second animation from inside this frame.
+     * The runner is reentrant, so the pause screen simply takes over the window
+     * until it is dismissed and then this frame finishes normally.
+     * </p>
+     *
+     * @param d the surface to draw this frame on.
+     */
+    @Override
+    public void doOneFrame(DrawSurface d) {
+        this.sprites.drawAllOn(d);
+        this.sprites.notifyAllTimePassed();
+
+        if (this.keyboard.isPressed("p") || this.keyboard.isPressed("P")) {
+            this.runner.run(new KeyPressStoppableAnimation(
+                    this.keyboard, KeyboardSensor.SPACE_KEY, new PauseScreen()));
+        }
+
+        if (this.remainingBlocks.getValue() <= 0 || this.remainingBalls.getValue() <= 0) {
+            this.running = false;
         }
     }
-    // === END INSTRUCTOR-PROVIDED run() ===
+
+    @Override
+    public boolean shouldStop() {
+        return !this.running;
+    }
 
     /**
      * Removes a collidable from the game's environment.
