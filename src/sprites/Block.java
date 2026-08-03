@@ -17,23 +17,65 @@ import java.util.List;
 
 /**
  * Represents a block in the game, which is a collidable object.
+ * <p>
+ * Every block in the game is this one class. What makes a block fragile, tough
+ * or indestructible is the BlockBehavior it holds, and what makes it explosive
+ * is a blast radius greater than zero. Nothing ever has to ask a block what
+ * kind of block it is; it is asked what state it is in, or told to take damage.
+ * </p>
  */
 public class Block implements Collidable, Sprite, GameItem, HitNotifier {
+    private static final double NO_BLAST = 0;
+
     private final Rectangle shape;
     private final java.awt.Color color;
     private final List<HitListener> hitListeners;
+    private final BlockBehavior behavior;
+    private final double blastRadius;
+
     /**
-     * Constructor for a Block with a given rectangle shape and color.
+     * Constructor for an ordinary block, destroyed by a single hit.
      *
      * @param rectangle the shape of the block.
      * @param color     the color of the block.
      */
     public Block(Rectangle rectangle, java.awt.Color color) {
+        this(rectangle, color, new PlainBehavior(), NO_BLAST);
+    }
+
+    /**
+     * Constructor for a block with a chosen behaviour and no blast.
+     *
+     * @param rectangle the shape of the block.
+     * @param color     the color of the block.
+     * @param behavior  how the block responds to being hit.
+     */
+    public Block(Rectangle rectangle, java.awt.Color color, BlockBehavior behavior) {
+        this(rectangle, color, behavior, NO_BLAST);
+    }
+
+    /**
+     * Constructor for a block with a chosen behaviour and a blast radius.
+     *
+     * @param rectangle   the shape of the block.
+     * @param color       the color of the block.
+     * @param behavior    how the block responds to being hit.
+     * @param blastRadius how far this block damages its neighbours when it is
+     *                    destroyed; zero for a block that does not explode.
+     * @throws IllegalArgumentException if blastRadius is negative, which would
+     *                                  silently read as "does not explode".
+     */
+    public Block(Rectangle rectangle, java.awt.Color color, BlockBehavior behavior, double blastRadius) {
+        if (blastRadius < 0) {
+            throw new IllegalArgumentException("blastRadius cannot be negative, but was " + blastRadius);
+        }
         this.shape = new Rectangle(rectangle.getUpperLeft(),
                 rectangle.getWidth(),
                 rectangle.getHeight());
         this.color = color;
         this.hitListeners = new ArrayList<>();
+        this.behavior = behavior;
+        this.blastRadius = blastRadius;
     }
 
     /**
@@ -91,9 +133,68 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
             dy *= -1;
         }
 
-        this.notifyHit(hitter);
+        this.applyDamage(hitter);
 
         return new Velocity(dx, dy);
+    }
+
+    /**
+     * Damages the block without a physical collision.
+     * <p>
+     * This is the same thing a bounce does to a block, minus the bounce. It
+     * exists so that a neighbouring explosion can hurt a block that nothing
+     * actually touched, and so that the damage still runs through the listeners
+     * -- which is what lets one explosion set off the next without any special
+     * chaining code.
+     * </p>
+     *
+     * @param hitter the ball responsible for the damage.
+     */
+    public void applyDamage(Ball hitter) {
+        this.behavior.registerHit(hitter);
+        this.notifyHit(hitter);
+    }
+
+    /**
+     * Whether this block has taken all the damage it can survive.
+     *
+     * @return true once the block should be removed from the game.
+     */
+    public boolean isDestroyed() {
+        return this.behavior.isDestroyed();
+    }
+
+    /**
+     * What the most recent hit on this block was worth.
+     * <p>
+     * This is a snapshot of the last hit, not a property of the block. It has
+     * no meaning before the block has been hit at all, and its value changes as
+     * damage accumulates -- a tough block pays more for the blow that breaks it
+     * than for the ones before.
+     * </p>
+     *
+     * @return the points to award for the hit that has just been registered.
+     */
+    public int pointsForLastHit() {
+        return this.behavior.pointsForLastHit();
+    }
+
+    /**
+     * How far this block damages its neighbours when destroyed.
+     *
+     * @return the blast radius in pixels; zero if the block does not explode.
+     */
+    public double getBlastRadius() {
+        return this.blastRadius;
+    }
+
+    /**
+     * The centre of the block, used to measure distance to its neighbours.
+     *
+     * @return the block's centre point.
+     */
+    public Point getCenter() {
+        return this.shape.getCenter();
     }
     /**
      * Adds a HitListener to the list of listeners to hit events.
@@ -121,7 +222,7 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
      */
     @Override
     public void drawOn(DrawSurface surface) {
-        this.shape.drawOn(surface, this.color);
+        this.shape.drawOn(surface, this.behavior.displayColor(this.color));
     }
 
     /**
@@ -153,5 +254,6 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     public void removeFromGame(GameLevel game) {
         game.removeCollidable(this);
         game.removeSprite(this);
+        game.removeBlock(this);
     }
 }

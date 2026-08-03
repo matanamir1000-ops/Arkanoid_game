@@ -24,15 +24,22 @@ public class BlockRemover implements HitListener {
     }
 
     /**
-     * Blocks that are hit should be removed from the game.
-     * This method removes the block from the game, removes this listener
-     * from the block that is being removed, and decreases the blocks counter.
+     * Removes a block once it has taken all the damage it can survive.
+     * <p>
+     * This one guard is the whole of the special-block system as far as removal
+     * is concerned. A tough block reports itself undestroyed until its last hit
+     * and a steel block never reports itself destroyed at all, so both are
+     * handled here without this class knowing that either exists.
+     * </p>
      *
      * @param beingHit the block that was hit
      * @param hitter   the ball that hit the block
      */
     @Override
     public void hitEvent(Block beingHit, Ball hitter) {
+        if (!beingHit.isDestroyed()) {
+            return;
+        }
         beingHit.removeFromGame(this.game);
         beingHit.removeHitListener(this);
         this.remainingBlocks.decrease(1);

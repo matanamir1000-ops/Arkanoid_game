@@ -112,9 +112,19 @@ public class Rectangle {
     }
 
     /**
-     * Gets the upper-left point of the rectangle.
+     * Gets the point at the middle of the rectangle.
      *
-     * @return a new Point representing the upper-left corner of the rectangle.
+     * @return a new Point at the rectangle's centre.
+     */
+    public Point getCenter() {
+        return new Point(this.upperLeft.getX() + this.width / 2,
+                this.upperLeft.getY() + this.height / 2);
+    }
+
+    /**
+     * Returns the upper-left corner of the rectangle.
+     *
+     * @return the upper-left Point.
      */
     public Point getUpperLeft() {
         return new Point(this.upperLeft.getX(), this.upperLeft.getY());

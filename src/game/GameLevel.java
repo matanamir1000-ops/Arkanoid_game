@@ -73,6 +73,7 @@ public class GameLevel implements Animation {
     private final int screenHeight;
     private final Counter score;
     private final Counter lives;
+    private final List<Block> blocks;
     private SpriteCollection sprites;
     private GameEnvironment environment;
     private Counter remainingBlocks;
@@ -107,6 +108,7 @@ public class GameLevel implements Animation {
         this.screenHeight = screenHeight;
         this.score = score;
         this.lives = lives;
+        this.blocks = new ArrayList<>();
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
@@ -268,12 +270,59 @@ public class GameLevel implements Animation {
      * @param items the in-progress list of GameItems to append the blocks to.
      */
     private void createBlocks(List<GameItem> items) {
+        ExplosionListener explosions = new ExplosionListener(this);
         for (Block block : this.levelInfo.blocks()) {
             block.addHitListener(this.blockRemover);
             block.addHitListener(this.scoreTracker);
+            block.addHitListener(explosions);
+            this.blocks.add(block);
             items.add(block);
         }
         this.remainingBlocks.increase(this.levelInfo.numberOfBlocksToRemove());
+    }
+
+    /**
+     * The gameplay blocks still standing in this level.
+     * <p>
+     * A copy, and necessarily so: the caller is an explosion, and damaging a
+     * neighbour can destroy it and remove it from this very list while the
+     * caller is still walking it.
+     * </p>
+     * <p>
+     * Only the level's own blocks are listed. The borders and the death region
+     * are blocks too, but they were never added here, so an explosion cannot
+     * reach them -- which matters, because damaging the death region would
+     * destroy the ball that set the explosion off.
+     * </p>
+     *
+     * @return a copy of the level's surviving blocks.
+     */
+    public List<Block> getBlocks() {
+        return new ArrayList<>(this.blocks);
+    }
+
+    /**
+     * Forgets a block that has left the game.
+     * <p>
+     * Called from Block.removeFromGame together with the sprite and collidable
+     * removals, so that a block leaves all three collections in one operation
+     * and no caller can drop it from some of them but not others.
+     * </p>
+     * <p>
+     * Adding is deliberately not symmetric with this. Block.addToGame registers
+     * a block as a sprite and a collidable but never as a gameplay block,
+     * because the borders and the death region go through that same method and
+     * must not become gameplay blocks: an explosion that could reach the death
+     * region would destroy the very ball that set it off. Only createBlocks
+     * knows which blocks are the level's own, so only createBlocks registers
+     * them. This method is a no-op for everything else, which is exactly what
+     * makes it safe to call unconditionally from removeFromGame.
+     * </p>
+     *
+     * @param block the block to forget; ignored if it was never a gameplay block.
+     */
+    public void removeBlock(Block block) {
+        this.blocks.remove(block);
     }
 
     /**

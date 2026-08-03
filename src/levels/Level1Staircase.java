@@ -2,10 +2,9 @@ package levels;
 
 import game.Background;
 import game.Sprite;
-import geometry.Point;
-import geometry.Rectangle;
 import geometry.Velocity;
 import sprites.Block;
+import sprites.BlockFactory;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -116,8 +115,7 @@ public class Level1Staircase implements LevelInformation {
             for (int column = 0; column < BLOCKS_IN_FIRST_ROW - row; column++) {
                 double x = rightEdge - (column + 1) * BLOCK_WIDTH;
                 double y = BLOCKS_START_Y + row * BLOCK_HEIGHT;
-                Rectangle shape = new Rectangle(new Point(x, y), BLOCK_WIDTH, BLOCK_HEIGHT);
-                staircase.add(new Block(shape, ROW_COLORS[row]));
+                staircase.add(BlockFactory.plain(x, y, BLOCK_WIDTH, BLOCK_HEIGHT, ROW_COLORS[row]));
             }
         }
         return staircase;

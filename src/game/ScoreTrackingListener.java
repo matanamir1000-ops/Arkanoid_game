@@ -9,7 +9,6 @@ import sprites.Block;
  */
 public class ScoreTrackingListener implements HitListener {
     private final Counter currentScore;
-    private static final int POINTS_PER_BLOCK = 5;
 
     /**
      * Constructs a new ScoreTrackingListener.
@@ -21,14 +20,19 @@ public class ScoreTrackingListener implements HitListener {
     }
 
     /**
-     * This method is called whenever the beingHit object is hit.
-     * Increases the score counter by 5 points.
+     * Awards whatever the hit was worth.
+     * <p>
+     * The block is asked what its own hit is worth rather than being paid a
+     * fixed rate. That is what lets a tough block pay per hit and a bonus for
+     * the last one, and a steel block pay nothing, without this class knowing
+     * that either kind of block exists.
+     * </p>
      *
      * @param beingHit the block that was hit.
      * @param hitter   the ball that hit the block.
      */
     @Override
     public void hitEvent(Block beingHit, Ball hitter) {
-        currentScore.increase(POINTS_PER_BLOCK);
+        this.currentScore.increase(beingHit.pointsForLastHit());
     }
 }
