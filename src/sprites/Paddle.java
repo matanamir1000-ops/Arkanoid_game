@@ -6,6 +6,7 @@ import collision.Collidable;
 import game.Game;
 import game.GameItem;
 import game.Sprite;
+import geometry.Geometry;
 import geometry.Point;
 import geometry.Rectangle;
 import geometry.Velocity;
@@ -36,7 +37,6 @@ public class Paddle implements Sprite, Collidable, GameItem {
     private static final int REGION_2_BOUNDARY = 2;
     private static final int REGION_3_BOUNDARY = 3;
     private static final int REGION_4_BOUNDARY = 4;
-    private static final double COMPARISON_THRESHOLD = 0.000001;
 
     private biuoop.KeyboardSensor keyboard;
     private Rectangle shape;
@@ -132,7 +132,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
      */
     @Override
     public Velocity hit(Ball hitter, Point collisionPoint, Velocity currentVelocity) {
-        if (Math.abs(collisionPoint.getY() - this.shape.getUpperLeft().getY()) < COMPARISON_THRESHOLD) {
+        if (Math.abs(collisionPoint.getY() - this.shape.getUpperLeft().getY()) < Geometry.epsilon()) {
             double regionWidth = this.shape.getWidth() / NUM_OF_REGIONS;
             double speed = Math.sqrt(currentVelocity.getDx() * currentVelocity.getDx()
                     + currentVelocity.getDy() * currentVelocity.getDy());
@@ -154,14 +154,14 @@ public class Paddle implements Sprite, Collidable, GameItem {
         double dx = currentVelocity.getDx();
         double dy = currentVelocity.getDy();
 
-        if (Math.abs(collisionPoint.getX() - this.shape.getUpperLeft().getX()) < COMPARISON_THRESHOLD
+        if (Math.abs(collisionPoint.getX() - this.shape.getUpperLeft().getX()) < Geometry.epsilon()
                 || Math.abs(collisionPoint.getX()
-                - (this.shape.getUpperLeft().getX() + this.shape.getWidth())) < COMPARISON_THRESHOLD) {
+                - (this.shape.getUpperLeft().getX() + this.shape.getWidth())) < Geometry.epsilon()) {
             dx *= -1;
         }
 
         if (Math.abs(collisionPoint.getY()
-                - (this.shape.getUpperLeft().getY() + this.shape.getHeight())) < COMPARISON_THRESHOLD) {
+                - (this.shape.getUpperLeft().getY() + this.shape.getHeight())) < Geometry.epsilon()) {
             dy *= -1;
         }
 

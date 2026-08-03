@@ -1,7 +1,6 @@
 import game.Game;
 
 /**
- * ID - 218062719
  * The main entry point for the Arkanoid game (Assignment 5).
  */
 public class Ass5Game {

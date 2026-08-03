@@ -201,6 +201,8 @@ public class Game {
     /**
      * Creates a staircase pattern of blocks.
      *
+     * @param remover the listener that removes a block from the game once it is hit.
+     * @param tracker the listener that awards points once a block is hit.
      * @return a list of blocks representing the pattern.
      */
     private List<Block> createBlockPattern(HitListener remover, HitListener tracker) {

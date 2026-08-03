@@ -7,6 +7,7 @@ import collision.HitNotifier;
 import game.Game;
 import game.GameItem;
 import game.Sprite;
+import geometry.Geometry;
 import geometry.Point;
 import geometry.Rectangle;
 import geometry.Velocity;
@@ -18,10 +19,9 @@ import java.util.List;
  * Represents a block in the game, which is a collidable object.
  */
 public class Block implements Collidable, Sprite, GameItem, HitNotifier {
-    private Rectangle shape;
-    private java.awt.Color color;
-    private static final double COMPARISON_THRESHOLD = 0.000001;
-    private List<HitListener> hitListeners;
+    private final Rectangle shape;
+    private final java.awt.Color color;
+    private final List<HitListener> hitListeners;
     private boolean recolorsHitter = false;
     /**
      * Constructor for a Block with a given rectangle shape and color.
@@ -76,15 +76,15 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
         double dx = currentVelocity.getDx();
         double dy = currentVelocity.getDy();
 
-        if (Math.abs(collisionPoint.getX() - this.shape.getUpperLeft().getX()) < COMPARISON_THRESHOLD
+        if (Math.abs(collisionPoint.getX() - this.shape.getUpperLeft().getX()) < Geometry.epsilon()
                 || Math.abs(collisionPoint.getX()
-                - (this.shape.getUpperLeft().getX() + this.shape.getWidth())) < COMPARISON_THRESHOLD) {
+                - (this.shape.getUpperLeft().getX() + this.shape.getWidth())) < Geometry.epsilon()) {
             dx *= -1;
         }
 
-        if (Math.abs(collisionPoint.getY() - this.shape.getUpperLeft().getY()) < COMPARISON_THRESHOLD
+        if (Math.abs(collisionPoint.getY() - this.shape.getUpperLeft().getY()) < Geometry.epsilon()
                 || Math.abs(collisionPoint.getY()
-                - (this.shape.getUpperLeft().getY() + this.shape.getHeight())) < COMPARISON_THRESHOLD) {
+                - (this.shape.getUpperLeft().getY() + this.shape.getHeight())) < Geometry.epsilon()) {
             dy *= -1;
         }
         if (!ballColorMatch(hitter)) {

@@ -2,8 +2,6 @@ package geometry;
 
 import biuoop.DrawSurface;
 
-import java.util.ArrayList;
-
 /**
  * Represents a 2D rectangle defined by an upper-left point, width, and height.
  */

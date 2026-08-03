@@ -7,6 +7,7 @@ import collision.GameEnvironment;
 import game.Game;
 import game.GameItem;
 import game.Sprite;
+import geometry.Geometry;
 import geometry.Line;
 import geometry.Point;
 import geometry.Rectangle;
@@ -18,10 +19,8 @@ import java.awt.Color;
  * Represents a 2D bouncing ball that is also a Sprite.
  */
 public class Ball implements Sprite, GameItem {
-    private static final double COMPARISON_THRESHOLD = 0.000001;
-
     private Point center;
-    private int radius;
+    private final int radius;
     private Color color;
     private Velocity velocity;
     private GameEnvironment environment;
@@ -173,17 +172,17 @@ public class Ball implements Sprite, GameItem {
         double newCenterX = collisionPoint.getX();
         double newCenterY = collisionPoint.getY();
 
-        if (Math.abs(collisionPoint.getX() - rectangle.getUpperLeft().getX()) < COMPARISON_THRESHOLD) {
+        if (Math.abs(collisionPoint.getX() - rectangle.getUpperLeft().getX()) < Geometry.epsilon()) {
             newCenterX = collisionPoint.getX() - this.radius;
         } else if (Math.abs(collisionPoint.getX()
-                - (rectangle.getUpperLeft().getX() + rectangle.getWidth())) < COMPARISON_THRESHOLD) {
+                - (rectangle.getUpperLeft().getX() + rectangle.getWidth())) < Geometry.epsilon()) {
             newCenterX = collisionPoint.getX() + this.radius;
         }
 
-        if (Math.abs(collisionPoint.getY() - rectangle.getUpperLeft().getY()) < COMPARISON_THRESHOLD) {
+        if (Math.abs(collisionPoint.getY() - rectangle.getUpperLeft().getY()) < Geometry.epsilon()) {
             newCenterY = collisionPoint.getY() - this.radius;
         } else if (Math.abs(collisionPoint.getY()
-                - (rectangle.getUpperLeft().getY() + rectangle.getHeight())) < COMPARISON_THRESHOLD) {
+                - (rectangle.getUpperLeft().getY() + rectangle.getHeight())) < Geometry.epsilon()) {
             newCenterY = collisionPoint.getY() + this.radius;
         }
 

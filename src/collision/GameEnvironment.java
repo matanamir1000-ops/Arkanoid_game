@@ -49,6 +49,10 @@ public class GameEnvironment {
     /**
      * Calculates and returns the closest collision that is going to occur for a given trajectory.
      *
+     * <p>The scan runs over a defensive copy of the collidables list. Hit handlers
+     * may add or remove collidables while a collision is being resolved, so
+     * iterating the live list would risk a ConcurrentModificationException.</p>
+     *
      * @param trajectory the trajectory line of the moving object.
      * @return the CollisionInfo of the closest collision, or null if no collision occurs.
      */
@@ -56,7 +60,7 @@ public class GameEnvironment {
         double minDistance = Double.MAX_VALUE;
         CollisionInfo closestCollision = null;
 
-        for (Collidable collidable : this.collidables) {
+        for (Collidable collidable : new ArrayList<Collidable>(this.collidables)) {
             Point intersectionPoint = trajectory.closestIntersectionToStartOfLine(collidable.getCollisionRectangle());
             if (intersectionPoint != null) {
                 double currentDistance = intersectionPoint.distance(trajectory.start());

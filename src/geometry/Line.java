@@ -7,7 +7,6 @@ package geometry;
 public class Line {
     private Point start;
     private Point end;
-    private static final double COMPARISON_THRESHOLD = 0.000001;
     private static final double DIVISOR_HALF = 2.0;
 
     /**
@@ -104,10 +103,10 @@ public class Line {
         double minY = Math.min(p.getY(), r.getY());
         double maxY = Math.max(p.getY(), r.getY());
 
-        boolean xInRange = (q.getX() >= minX - COMPARISON_THRESHOLD)
-                && (q.getX() <= maxX + COMPARISON_THRESHOLD);
-        boolean yInRange = (q.getY() >= minY - COMPARISON_THRESHOLD)
-                && (q.getY() <= maxY + COMPARISON_THRESHOLD);
+        boolean xInRange = (q.getX() >= minX - Geometry.epsilon())
+                && (q.getX() <= maxX + Geometry.epsilon());
+        boolean yInRange = (q.getY() >= minY - Geometry.epsilon())
+                && (q.getY() <= maxY + Geometry.epsilon());
 
         return xInRange && yInRange;
     }
@@ -127,16 +126,16 @@ public class Line {
         double mySideStart = orientation(other.start, other.end, this.start);
 
         // Handle collinear edge cases: check if endpoints lie exactly on the other segment
-        if (Math.abs(otherSideStart) < COMPARISON_THRESHOLD && onSegment(this.start, other.start, this.end)) {
+        if (Math.abs(otherSideStart) < Geometry.epsilon() && onSegment(this.start, other.start, this.end)) {
             return true;
         }
-        if (Math.abs(otherSideEnd) < COMPARISON_THRESHOLD && onSegment(this.start, other.end, this.end)) {
+        if (Math.abs(otherSideEnd) < Geometry.epsilon() && onSegment(this.start, other.end, this.end)) {
             return true;
         }
-        if (Math.abs(mySideEnd) < COMPARISON_THRESHOLD && onSegment(other.start, this.end, other.end)) {
+        if (Math.abs(mySideEnd) < Geometry.epsilon() && onSegment(other.start, this.end, other.end)) {
             return true;
         }
-        if (Math.abs(mySideStart) < COMPARISON_THRESHOLD && onSegment(other.start, this.start, other.end)) {
+        if (Math.abs(mySideStart) < Geometry.epsilon() && onSegment(other.start, this.start, other.end)) {
             return true;
         }
 
@@ -183,7 +182,7 @@ public class Line {
         // Calculate the determinant to check for parallelism or collinearity
         double det = myA * otherB - otherA * myB;
 
-        if (Math.abs(det) < COMPARISON_THRESHOLD) {
+        if (Math.abs(det) < Geometry.epsilon()) {
             if (this.start.equals(this.end) && onSegment(other.start, this.start, other.end)) {
                 return this.start();
             }

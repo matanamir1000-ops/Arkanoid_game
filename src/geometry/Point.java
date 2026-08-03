@@ -6,7 +6,6 @@ package geometry;
 public class Point {
     private final double x;
     private final double y;
-    private static final double COMPARISON_THRESHOLD = 0.000001;
     /**
      * Constructs a new point with the specified x and y coordinates.
      *
@@ -41,8 +40,8 @@ public class Point {
         if (other == null) {
             return false;
         }
-        return (Math.abs(this.x - other.x) < COMPARISON_THRESHOLD
-                && Math.abs(this.y - other.y) < COMPARISON_THRESHOLD);
+        return (Math.abs(this.x - other.x) < Geometry.epsilon()
+                && Math.abs(this.y - other.y) < Geometry.epsilon());
     }
 
     /**
