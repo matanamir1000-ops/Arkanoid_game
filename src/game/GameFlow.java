@@ -55,6 +55,20 @@ public class GameFlow {
     }
 
     /**
+     * The score the session ended on.
+     * <p>
+     * Read after runLevels returns, by whoever wants to record it. GameFlow
+     * deliberately does not decide whether the score is worth keeping or where
+     * it would be kept -- files and dialogs belong to the composition root.
+     * </p>
+     *
+     * @return the final score.
+     */
+    public int getScore() {
+        return this.score.getValue();
+    }
+
+    /**
      * Plays the given levels in order until they are all cleared or the player
      * runs out of lives.
      * <p>
