@@ -213,6 +213,7 @@ most recent phase.
 | Tag | Commit | Phase |
 |---|---|---|
 | `phase-0` | `5f0167b` | Hygiene, seams, repo config |
+| `phase-1` | `324b70f` | Remove the colour-match gate |
 
 ---
 
