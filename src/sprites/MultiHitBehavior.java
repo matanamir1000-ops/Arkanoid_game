@@ -89,4 +89,9 @@ public class MultiHitBehavior implements BlockBehavior {
         }
         return POINTS_PER_HIT;
     }
+
+    @Override
+    public boolean isBreakable() {
+        return true;
+    }
 }

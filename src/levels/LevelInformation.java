@@ -92,6 +92,15 @@ public interface LevelInformation {
      * returned a cached list, replaying the level after losing a life would
      * hand back the half-destroyed blocks from the previous attempt.
      * </p>
+     * <p>
+     * <b>Every call must also build the same layout.</b> New objects, identical
+     * arrangement. The win condition is counted from a separate call to this
+     * method, so a level that laid its blocks out differently each time would
+     * be played with one field and judged against another -- ending early, or
+     * never ending, with nothing to say which. A level wanting variety must
+     * decide its layout once, in its constructor, and build the same one here
+     * every time.
+     * </p>
      *
      * @return a fresh list of fresh blocks.
      */

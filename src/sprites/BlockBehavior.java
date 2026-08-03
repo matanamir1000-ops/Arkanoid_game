@@ -41,6 +41,28 @@ public interface BlockBehavior {
     boolean isDestroyed();
 
     /**
+     * Whether this block can ever be destroyed at all.
+     * <p>
+     * Different from isDestroyed, which asks whether it has been. This asks
+     * whether it could be, and it is the same answer for the whole life of the
+     * block. A level counts these to know how many blocks clearing it requires,
+     * so a level containing indestructible blocks cannot accidentally declare a
+     * target it can never reach.
+     * </p>
+     * <p>
+     * <b>A behaviour that answers false here must answer false from
+     * isDestroyed() forever.</b> The two are read by different callers: the
+     * level counts this one to set its target, and BlockRemover reads the other
+     * to decide what to remove. A block that was never counted but is removed
+     * anyway decrements a target it was never part of, and the level ends with
+     * blocks still standing.
+     * </p>
+     *
+     * @return true if destroying this block is possible.
+     */
+    boolean isBreakable();
+
+    /**
      * The colour to draw the block in right now.
      * <p>
      * Given the block's own colour, a behaviour may return it unchanged or

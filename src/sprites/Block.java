@@ -180,6 +180,20 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     }
 
     /**
+     * Whether this block can ever be destroyed.
+     * <p>
+     * Fixed for the life of the block, unlike isDestroyed. A level counts these
+     * to work out how many blocks clearing it requires, which is what stops a
+     * level declaring a target that includes blocks nothing can break.
+     * </p>
+     *
+     * @return true if destroying this block is possible.
+     */
+    public boolean isBreakable() {
+        return this.behavior.isBreakable();
+    }
+
+    /**
      * How far this block damages its neighbours when destroyed.
      *
      * @return the blast radius in pixels; zero if the block does not explode.

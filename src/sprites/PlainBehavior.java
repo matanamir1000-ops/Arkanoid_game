@@ -40,4 +40,9 @@ public class PlainBehavior implements BlockBehavior {
     public int pointsForLastHit() {
         return POINTS_PER_BLOCK;
     }
+
+    @Override
+    public boolean isBreakable() {
+        return true;
+    }
 }

@@ -42,4 +42,9 @@ public class SteelBehavior implements BlockBehavior {
     public int pointsForLastHit() {
         return NO_POINTS;
     }
+
+    @Override
+    public boolean isBreakable() {
+        return false;
+    }
 }
