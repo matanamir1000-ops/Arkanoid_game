@@ -1,6 +1,8 @@
 package animation;
 
 import biuoop.DrawSurface;
+import graphics.ColorFade;
+import graphics.TextRenderer;
 
 import java.awt.Color;
 
@@ -24,17 +26,11 @@ import java.awt.Color;
 public abstract class MessageScreen implements Animation {
     private static final Color BACKGROUND_COLOR = Color.BLACK;
     private static final int FONT_SIZE = 32;
-    private static final int MINIMUM_INSET = 10;
-
-    /**
-     * Rough width of one character as a fraction of the font size. DrawSurface
-     * exposes no way to measure rendered text, so centring has to be estimated.
-     * Every centred string in this hierarchy goes through this one constant,
-     * which is what makes the estimate tunable in a single place.
-     */
-    private static final double CHARACTER_WIDTH_RATIO = 0.55;
+    private static final double PULSE_RATE = 0.06;
+    private static final double PULSE_DEPTH = 0.45;
 
     private final Color textColor;
+    private int frame;
 
     /**
      * Constructor.
@@ -43,6 +39,7 @@ public abstract class MessageScreen implements Animation {
      */
     protected MessageScreen(Color textColor) {
         this.textColor = textColor;
+        this.frame = 0;
     }
 
     /**
@@ -52,14 +49,80 @@ public abstract class MessageScreen implements Animation {
      */
     protected abstract String message();
 
+    /**
+     * Anything a subclass wants drawn behind the message.
+     * <p>
+     * Called after the backdrop is laid down and before the text, so whatever a
+     * subclass draws here appears behind the words rather than over them. Empty
+     * by default: most screens are just a sentence.
+     * </p>
+     * <p>
+     * The frame number is handed in rather than counted again by the subclass.
+     * There is one clock on this screen and it lives here, so no subclass has to
+     * remember to advance a second copy of it.
+     * </p>
+     *
+     * @param d     the surface being drawn on.
+     * @param frame how many frames this screen has been shown for.
+     */
+    protected void drawBehindMessage(DrawSurface d, int frame) {
+        // Intentionally empty: a plain message screen has nothing behind its text.
+    }
+
+    /**
+     * The colour the backdrop is painted in.
+     * <p>
+     * Overridable, like the message and the decoration, so that a screen wanting
+     * a different backdrop is not the one thing a subclass cannot change.
+     * </p>
+     *
+     * @return the backdrop colour, which effects should also fade toward.
+     */
+    protected Color backgroundColor() {
+        return BACKGROUND_COLOR;
+    }
+
+    /**
+     * A value that swings smoothly between 0 and 1 as the frames pass.
+     * <p>
+     * Used for the colour pulse rather than a size pulse. Centring is estimated
+     * from the font size, so a size that changed every frame would make the text
+     * jitter sideways.
+     * </p>
+     *
+     * @param frame the current frame number.
+     * @param rate  how fast the pulse swings.
+     * @return a value from 0 to 1.
+     */
+    private static double pulse(int frame, double rate) {
+        return (Math.sin(frame * rate) + 1.0) / 2.0;
+    }
+
+    /**
+     * Draws the backdrop, any decoration, and the pulsing message.
+     * <p>
+     * The pulse is applied to the colour rather than to the font size. Centring
+     * is estimated from the character count and the font size, so a size that
+     * changed every frame would make the text jitter sideways.
+     * </p>
+     *
+     * @param d the surface to draw this frame on.
+     */
     @Override
     public void doOneFrame(DrawSurface d) {
-        d.setColor(BACKGROUND_COLOR);
+        Color backdrop = this.backgroundColor();
+        d.setColor(backdrop);
         d.fillRectangle(0, 0, d.getWidth(), d.getHeight());
 
+        this.drawBehindMessage(d, this.frame);
+
         String text = this.message();
-        d.setColor(this.textColor);
-        d.drawText(this.centredX(d.getWidth(), text), d.getHeight() / 2, text, FONT_SIZE);
+        double dim = pulse(this.frame, PULSE_RATE) * PULSE_DEPTH;
+        Color pulsing = ColorFade.towards(this.textColor, backdrop, dim);
+
+        TextRenderer.drawGlowing(d, TextRenderer.centredX(d.getWidth(), text, FONT_SIZE),
+                d.getHeight() / 2, text, FONT_SIZE, pulsing, backdrop);
+        this.frame++;
     }
 
     /**
@@ -76,26 +139,5 @@ public abstract class MessageScreen implements Animation {
     @Override
     public final boolean shouldStop() {
         return false;
-    }
-
-    /**
-     * Estimates the x coordinate that centres the given text.
-     * <p>
-     * The result never starts off the left edge. It cannot promise the whole
-     * string fits: a message long enough to overflow will run off the right
-     * instead, which at least keeps its beginning readable.
-     * </p>
-     *
-     * @param surfaceWidth the width of the surface being drawn on.
-     * @param text         the text about to be drawn.
-     * @return the left edge to start drawing from.
-     */
-    private int centredX(int surfaceWidth, String text) {
-        double estimatedWidth = text.length() * FONT_SIZE * CHARACTER_WIDTH_RATIO;
-        int x = (int) ((surfaceWidth - estimatedWidth) / 2);
-        if (x < MINIMUM_INSET) {
-            return MINIMUM_INSET;
-        }
-        return x;
     }
 }

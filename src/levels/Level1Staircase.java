@@ -1,6 +1,5 @@
 package levels;
 
-import game.Background;
 import game.Sprite;
 import geometry.Velocity;
 import powerups.ExtraBall;
@@ -41,6 +40,7 @@ public class Level1Staircase implements LevelInformation {
     private static final int PADDLE_WIDTH = 150;
 
     private static final Color BACKGROUND_COLOR = Color.BLACK;
+    private static final long STAR_SEED = 1L;
     private static final int BORDER_THICKNESS = 20;
 
     private static final int BLOCKS_IN_FIRST_ROW = 12;
@@ -100,9 +100,19 @@ public class Level1Staircase implements LevelInformation {
         return LEVEL_NAME;
     }
 
+    /**
+     * A fresh backdrop each call.
+     * <p>
+     * The starfield animates, so handing out a shared instance would let two
+     * levels drive the same twinkle counter. The seed is fixed, so the layout is
+     * the same every time this level is played.
+     * </p>
+     *
+     * @return the backdrop for this level.
+     */
     @Override
     public Sprite getBackground() {
-        return new Background(BACKGROUND_COLOR, 0, 0, this.screenWidth, this.screenHeight);
+        return new StarfieldBackground(BACKGROUND_COLOR, this.screenWidth, this.screenHeight, STAR_SEED);
     }
 
     @Override
