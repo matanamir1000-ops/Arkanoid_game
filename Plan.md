@@ -260,6 +260,12 @@ most recent phase.
 | `phase-4` | `7594f9b` | `LevelInformation`, `Level1Staircase`, level name indicator |
 | `phase-5` | `8985f8d` | Lives, `GameFlow`, countdown, `TextIndicator` |
 | `phase-6` | `b062cfe` | `MessageScreen`, win and game over screens |
+| `phase-7` | `c7591b4` | Multi-hit, steel and exploding blocks via `BlockBehavior` |
+| `phase-8` | `98e0555` | Particle system, emitters, block bursts and ball trails |
+| `phase-9` | `4a6ff86` | Falling power-ups, `Catcher`, laser paddle |
+| `phase-10` | `580c0fb` | Neon text, pulsing, animated backgrounds |
+| `phase-11` | `a6047d6` | High score table with file persistence |
+| `phase-12` | `203f140` | Five-level pack with mixed block types |
 
 ---
 
