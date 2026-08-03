@@ -174,6 +174,20 @@ Because all three gates run before every commit, **every commit on `main` is a
 working, playable state.** There is no point in the history where the project is
 broken. That is what makes rolling back safe.
 
+### Two build gotchas (learned in Phase 2)
+
+**`ant compile` alone hides rename and signature errors.** `build.xml` puts `bin`
+on the compile classpath, so stale `.class` files from the previous build still
+resolve. Renaming `Game` produced only 3 errors incrementally but 18 after
+`ant clean`. **Any phase that renames a type or changes a signature must run
+`ant clean` before trusting the error list** — that includes Phase 3's constructor
+changes and Phase 4's `LevelInformation` wiring.
+
+**PowerShell 5.1 mangles `git commit -m` messages containing double quotes.**
+Even inside a single-quoted here-string, embedded `"` breaks native-command
+argument passing and git receives fragments as pathspecs. Write the message to a
+file and use `git commit -F <file>` whenever the message quotes a string literal.
+
 ## Rolling Back a Phase
 
 Each phase is one atomic, tagged commit, so any phase can be undone.
@@ -214,6 +228,7 @@ most recent phase.
 |---|---|---|
 | `phase-0` | `5f0167b` | Hygiene, seams, repo config |
 | `phase-1` | `324b70f` | Remove the colour-match gate |
+| `phase-2` | `57e5399` | Rename `Game` to `GameLevel` |
 
 ---
 
