@@ -145,13 +145,14 @@ The rule is: **never ask what an object is; ask what state it is in, or tell it 
 
 Each phase is self-contained, compiles, runs, and is playable. No phase is left uncommitted.
 
-**Three gates before every commit:**
+**Four gates before every commit:**
 
 | Gate | Command | Pass condition |
 |---|---|---|
 | **G1 Compile** | `ant compile` | `BUILD SUCCESSFUL` |
 | **G2 Run** | `ant run` | Game launches, is playable, closes cleanly |
 | **G3 Checkstyle** | see below | `Audit done.` with 0 errors |
+| **G4 OOP review** | `java-oop-purist-reviewer` agent | No design violation left unaddressed |
 
 Checkstyle on Windows PowerShell:
 
@@ -159,6 +160,31 @@ Checkstyle on Windows PowerShell:
 $f = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
 java -jar checkstyle-8.44-all.jar -c biuoop.xml $f
 ```
+
+### G4 — the OOP gate
+
+Checkstyle checks formatting; it says nothing about design. G4 covers the gap.
+The `java-oop-purist-reviewer` agent reviews the phase's diff against
+`.claude/agent-memory/java-oop-purist-reviewer/reference_syllabus.md` — the
+concepts actually taught in the course.
+
+**The standard this enforces:** the code must be readable months later by the
+person who wrote the original, without the conversation that produced it. A
+design that needs a transcript to explain it has failed, however correct it is.
+
+Non-negotiables it guards:
+
+- **No type interrogation.** `instanceof`, `getClass`, `Class.isInstance` are
+  forbidden. Ask an object what *state* it is in, or tell it to act — never ask
+  what it *is*.
+- **Encapsulation is absolute.** Private fields only; behaviour lives with the
+  data it operates on.
+- **Inside the syllabus.** No lambdas, streams, `var`, records, reflection or
+  threading. `@Override` is the only annotation.
+- **Plainest construct that expresses the intent.** Cleverness is a defect here.
+
+Every phase report also lists **which files changed**, so the diff can be read
+directly rather than taken on trust.
 
 **Commit sequence per phase:**
 
