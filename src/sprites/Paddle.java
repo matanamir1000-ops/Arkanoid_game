@@ -3,7 +3,7 @@ package sprites;
 import biuoop.DrawSurface;
 import biuoop.KeyboardSensor;
 import collision.Collidable;
-import game.Game;
+import game.GameLevel;
 import game.GameItem;
 import game.Sprite;
 import geometry.Geometry;
@@ -41,7 +41,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
     private biuoop.KeyboardSensor keyboard;
     private Rectangle shape;
     private Color color;
-    private Game game;
+    private GameLevel game;
     private PaddleGhost ghost;
 
     /**
@@ -174,7 +174,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
      * @param game the game object.
      */
     @Override
-    public void addToGame(Game game) {
+    public void addToGame(GameLevel game) {
         this.game = game;
         game.addSprite(this);
         game.addCollidable(this);

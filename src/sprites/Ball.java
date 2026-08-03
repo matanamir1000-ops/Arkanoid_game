@@ -4,7 +4,7 @@ import biuoop.DrawSurface;
 import collision.Collidable;
 import collision.CollisionInfo;
 import collision.GameEnvironment;
-import game.Game;
+import game.GameLevel;
 import game.GameItem;
 import game.Sprite;
 import geometry.Geometry;
@@ -213,7 +213,7 @@ public class Ball implements Sprite, GameItem {
      * @param game the game to add the ball to.
      */
     @Override
-    public void addToGame(Game game) {
+    public void addToGame(GameLevel game) {
         game.addSprite(this);
         this.environment = game.getEnvironment();
     }
@@ -222,7 +222,7 @@ public class Ball implements Sprite, GameItem {
      *
      * @param g the game from which the ball should be removed
      */
-    public void removeFromGame(Game g) {
+    public void removeFromGame(GameLevel g) {
         g.removeSprite(this);
     }
 }

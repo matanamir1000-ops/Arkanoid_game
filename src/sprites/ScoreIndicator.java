@@ -2,7 +2,7 @@ package sprites;
 
 import biuoop.DrawSurface;
 import game.Counter;
-import game.Game;
+import game.GameLevel;
 import game.GameItem;
 import game.Sprite;
 import geometry.Rectangle;
@@ -64,7 +64,7 @@ public class ScoreIndicator implements Sprite, GameItem {
      *
      * @param g the game environment to add this sprite to.
      */
-    public void addToGame(Game g) {
+    public void addToGame(GameLevel g) {
         g.addSprite(this);
     }
 }

@@ -4,7 +4,7 @@ import biuoop.DrawSurface;
 import collision.Collidable;
 import collision.HitListener;
 import collision.HitNotifier;
-import game.Game;
+import game.GameLevel;
 import game.GameItem;
 import game.Sprite;
 import geometry.Geometry;
@@ -139,7 +139,7 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
      * @param game the game to add the block to.
      */
     @Override
-    public void addToGame(Game game) {
+    public void addToGame(GameLevel game) {
         game.addSprite(this);
         game.addCollidable(this);
     }
@@ -150,7 +150,7 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
      *
      * @param game the game from which this block will be removed
      */
-    public void removeFromGame(Game game) {
+    public void removeFromGame(GameLevel game) {
         game.removeCollidable(this);
         game.removeSprite(this);
     }

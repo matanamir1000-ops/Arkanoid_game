@@ -9,7 +9,7 @@ import sprites.Block;
  * of the number of balls that remain.
  */
 public class BallRemover implements HitListener {
-    private final Game game;
+    private final GameLevel game;
     private final Counter remainingBalls;
 
     /**
@@ -18,7 +18,7 @@ public class BallRemover implements HitListener {
      * @param game           the game from which balls will be removed
      * @param remainingBalls the counter tracking the number of remaining balls
      */
-    public BallRemover(Game game, Counter remainingBalls) {
+    public BallRemover(GameLevel game, Counter remainingBalls) {
         this.game = game;
         this.remainingBalls = remainingBalls;
     }

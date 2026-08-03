@@ -9,5 +9,5 @@ public interface GameItem {
      *
      * @param game the game to add the item to.
      */
-    void addToGame(Game game);
+    void addToGame(GameLevel game);
 }

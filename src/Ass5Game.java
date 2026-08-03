@@ -1,7 +1,7 @@
-import game.Game;
+import game.GameLevel;
 
 /**
- * The main entry point for the Arkanoid game (Assignment 5).
+ * The main entry point for the Arkanoid game.
  */
 public class Ass5Game {
     /**
@@ -9,9 +9,8 @@ public class Ass5Game {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        Game game = new Game();
+        GameLevel game = new GameLevel();
         game.initialize();
         game.run();
-
     }
 }

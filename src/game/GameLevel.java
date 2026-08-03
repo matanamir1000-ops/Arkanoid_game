@@ -18,9 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Game class manages the game environment, sprites, and animation loop.
+ * Manages the game environment, sprites, and animation loop for a single level.
  */
-public class Game {
+public class GameLevel {
     private SpriteCollection sprites;
     private GameEnvironment environment;
     private GUI gui;
@@ -63,10 +63,10 @@ public class Game {
     private static final int SCORE_INDICATOR_HEIGHT = 20;
 
     /**
-     * Constructor for a new Game.
+     * Constructor for a new GameLevel.
      * Initializes the internal collections.
      */
-    public Game() {
+    public GameLevel() {
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
@@ -125,7 +125,7 @@ public class Game {
 
     /**
      * Creates the shared block/score listeners and the on-screen score indicator.
-     * The BlockRemover and ScoreTrackingListener are stored on the Game instance so
+     * The BlockRemover and ScoreTrackingListener are stored on the GameLevel instance so
      * createBlockPattern can attach the same instances to every gameplay block.
      *
      * @param items the in-progress list of GameItems to append the indicator to.
