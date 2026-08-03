@@ -19,8 +19,10 @@ import particles.ParticleHitListener;
 import particles.ParticleSystem;
 import particles.RadialBurstEmitter;
 import particles.TrailEmitter;
+import powerups.PowerUpDropper;
 import sprites.Ball;
 import sprites.Block;
+import sprites.Catcher;
 import sprites.LevelNameIndicator;
 import sprites.LivesIndicator;
 import sprites.Paddle;
@@ -71,6 +73,9 @@ public class GameLevel implements Animation, BallSource {
     private static final int PADDLE_START_Y = 560;
     private static final int PADDLE_HEIGHT = 10;
     private static final Color PADDLE_COLOR = Color.ORANGE;
+
+    /** How often a destroyed block leaves a power-up behind. */
+    private static final double POWER_UP_DROP_CHANCE = 0.12;
 
     private final LevelInformation levelInfo;
     private final AnimationRunner runner;
@@ -154,6 +159,11 @@ public class GameLevel implements Animation, BallSource {
      * fresh set each time it is called.
      * </p>
      * <p>
+     * The paddle is built before the blocks because the blocks' power-up
+     * dropper needs something to be caught by. The two never overlap on screen,
+     * so the drawing order between them does not matter.
+     * </p>
+     * <p>
      * The backdrop is added straight to the sprite collection before anything
      * else so that it is drawn underneath every other sprite each frame.
      * </p>
@@ -164,8 +174,8 @@ public class GameLevel implements Animation, BallSource {
         List<GameItem> items = new ArrayList<>();
         this.createListenersAndIndicators(items);
         this.createBorders(items);
-        this.createBlocks(items);
         this.createPaddle(items);
+        this.createBlocks(items, this.paddle);
         this.createEffects(items);
 
         for (GameItem item : items) {
@@ -292,17 +302,24 @@ public class GameLevel implements Animation, BallSource {
      * will use.
      * </p>
      *
-     * @param items the in-progress list of GameItems to append the blocks to.
+     * @param items   the in-progress list of GameItems to append the blocks to.
+     * @param catcher what a dropped power-up can be caught by. Passed in rather
+     *                than read from a field so that the compiler enforces the
+     *                ordering: blocks cannot be built before there is something
+     *                to catch what they drop.
      */
-    private void createBlocks(List<GameItem> items) {
+    private void createBlocks(List<GameItem> items, Catcher catcher) {
         ExplosionListener explosions = new ExplosionListener(this);
         ParticleHitListener burst = new ParticleHitListener(this.particles,
                 new RadialBurstEmitter(this.levelInfo.backdropColor()));
+        PowerUpDropper dropper = new PowerUpDropper(this, catcher, this.levelInfo.availablePowerUps(),
+                POWER_UP_DROP_CHANCE, this.screenHeight);
         for (Block block : this.levelInfo.blocks()) {
             block.addHitListener(this.blockRemover);
             block.addHitListener(this.scoreTracker);
             block.addHitListener(explosions);
             block.addHitListener(burst);
+            block.addHitListener(dropper);
             this.blocks.add(block);
             items.add(block);
         }
@@ -341,6 +358,29 @@ public class GameLevel implements Animation, BallSource {
     @Override
     public List<Ball> getBalls() {
         return new ArrayList<>(this.balls);
+    }
+
+    /**
+     * The paddle the player is steering.
+     * <p>
+     * Exposed so that a power-up can act on it. The power-up tells the paddle
+     * what to become; it is never handed the paddle's dimensions to change from
+     * outside, because only the paddle knows what its wrap logic can survive.
+     * </p>
+     *
+     * @return this level's paddle.
+     */
+    public Paddle getPaddle() {
+        return this.paddle;
+    }
+
+    /**
+     * The width of the playfield.
+     *
+     * @return the playfield width, in pixels.
+     */
+    public int getScreenWidth() {
+        return this.screenWidth;
     }
 
     /**

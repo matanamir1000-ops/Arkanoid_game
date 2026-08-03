@@ -156,8 +156,16 @@ public class Ball implements Sprite, GameItem {
      * Moves the ball one step based on its velocity and the game environment.
      * If a collision is expected, the ball is moved to the hit point and
      * its velocity is updated accordingly.
+     * <p>
+     * Private, and that matters. This depends on the environment the ball is
+     * handed when it joins a level, so a projectile subclass that does not join
+     * as a ball has no environment to consult. Exposed, it would let any caller
+     * holding a Ball reference reach that state on a subclass where it was
+     * never set. Movement is reached only through timePassed, which a subclass
+     * overrides wholesale.
+     * </p>
      */
-    public void moveOneStep() {
+    private void moveOneStep() {
         // 1. Check and escape if swallowed
         this.applyDeepSwallowGuard();
 

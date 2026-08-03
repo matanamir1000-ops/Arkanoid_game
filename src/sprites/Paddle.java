@@ -19,7 +19,20 @@ import java.awt.Color;
  * The paddle also performs a smooth screen-wrap (Pac-Man effect) at the inner left and right borders,
  * delegating the off-screen slice's drawing and collisions to a transient PaddleGhost collaborator.
  */
-public class Paddle implements Sprite, Collidable, GameItem {
+public class Paddle implements Sprite, Collidable, GameItem, Catcher {
+    /**
+     * The widest the paddle may become.
+     * <p>
+     * 300 is a playability choice. The hard ceiling is INNER_WIDTH: at that
+     * width or beyond, the paddle can hang off both edges at once, the "off the
+     * left" and "off the right" branches of handleScreenWrap are both true, and
+     * the first one returns -- so the wrapped slice on one side silently stops
+     * existing. This value stays far below that, which is why the failure is
+     * unreachable rather than merely unlikely.
+     * </p>
+     */
+    private static final int MAX_PADDLE_WIDTH = 300;
+
     // --- Movement and Screen Constants ---
     private static final int SCREEN_WIDTH = 800;
     private static final int BORDER_THICKNESS = 20;
@@ -44,6 +57,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
     private final int step;
     private GameLevel game;
     private PaddleGhost ghost;
+    private final LaserCannon cannon;
 
     /**
      * Constructor for the Paddle.
@@ -59,6 +73,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
         this.startingShape = new Rectangle(shape.getUpperLeft(), shape.getWidth(), shape.getHeight());
         this.color = color;
         this.step = step;
+        this.cannon = new LaserCannon();
     }
 
     /**
@@ -85,7 +100,6 @@ public class Paddle implements Sprite, Collidable, GameItem {
         double nextX = this.shape.getUpperLeft().getX() - this.step;
         this.shape = new Rectangle(new Point(nextX, this.shape.getUpperLeft().getY()),
                 this.shape.getWidth(), this.shape.getHeight());
-        this.handleScreenWrap();
     }
 
     /**
@@ -97,12 +111,17 @@ public class Paddle implements Sprite, Collidable, GameItem {
         double nextX = this.shape.getUpperLeft().getX() + this.step;
         this.shape = new Rectangle(new Point(nextX, this.shape.getUpperLeft().getY()),
                 this.shape.getWidth(), this.shape.getHeight());
-        this.handleScreenWrap();
     }
 
     /**
      * Notifies the paddle that time has passed.
-     * Checks if the left or right keys are pressed and moves the paddle accordingly.
+     * <p>
+     * Moving, firing, and then restoring the wrap state. That last call is
+     * unconditional and is the single place the wrap invariant is maintained:
+     * the paddle can change shape without the player touching a key -- a
+     * power-up may widen it while it stands still -- and a wrap refresh that
+     * only ran on movement would leave a stale ghost behind.
+     * </p>
      */
     @Override
     public void timePassed() {
@@ -112,6 +131,94 @@ public class Paddle implements Sprite, Collidable, GameItem {
         if (this.keyboard.isPressed(KeyboardSensor.RIGHT_KEY)) {
             this.moveRight();
         }
+        this.cannon.fireIfRequested(this.keyboard, this.muzzle(), this.game);
+        this.handleScreenWrap();
+    }
+
+    /**
+     * Where a laser bolt would leave the paddle from.
+     *
+     * @return the midpoint of the paddle's top edge.
+     */
+    private Point muzzle() {
+        return new Point(this.shape.getUpperLeft().getX() + this.shape.getWidth() / 2,
+                this.shape.getUpperLeft().getY());
+    }
+
+    /**
+     * Arms the paddle with laser shots.
+     *
+     * @param shots how many bolts to add to the magazine.
+     */
+    public void grantLaserShots(int shots) {
+        this.cannon.grantShots(shots);
+    }
+
+    /**
+     * Widens the paddle, up to its maximum.
+     * <p>
+     * The growth is split evenly across both sides. Growing from the upper-left
+     * corner alone would shift the paddle right by the whole increase in a
+     * single frame, which can jump it across a wrap boundary while its ghost
+     * still describes where it used to be.
+     * </p>
+     * <p>
+     * The wrap state is recomputed immediately afterwards, because the paddle
+     * may now overhang an edge it did not overhang a moment ago.
+     * </p>
+     *
+     * @param widthIncrease how many pixels wider to become.
+     */
+    public void expand(int widthIncrease) {
+        double newWidth = this.shape.getWidth() + widthIncrease;
+        if (newWidth > MAX_PADDLE_WIDTH) {
+            newWidth = MAX_PADDLE_WIDTH;
+        }
+        double delta = newWidth - this.shape.getWidth();
+        if (delta <= 0) {
+            return;
+        }
+        double newX = this.shape.getUpperLeft().getX() - delta / 2;
+        this.shape = new Rectangle(new Point(newX, this.shape.getUpperLeft().getY()),
+                newWidth, this.shape.getHeight());
+        this.handleScreenWrap();
+    }
+
+    /**
+     * Whether the paddle overlaps the given area.
+     * <p>
+     * Both halves are tested. During a screen wrap the paddle is drawn as two
+     * slices, and the collision rectangle reports only the visible one, so an
+     * overlap test performed from outside would miss anything landing on the
+     * wrapped half. This is the only place that knows about both.
+     * </p>
+     *
+     * @param area the falling object's bounds.
+     * @return true if the paddle overlaps that area.
+     */
+    @Override
+    public boolean catches(Rectangle area) {
+        Rectangle visible = this.visibleSlice();
+        if (visible != null && visible.intersects(area)) {
+            return true;
+        }
+        return this.ghost != null && this.ghost.getCollisionRectangle().intersects(area);
+    }
+
+    /**
+     * Removes the paddle from the game, taking any wrap ghost with it.
+     * <p>
+     * The ghost is a separate registered collidable. A paddle removed while
+     * mid-wrap would otherwise leave it behind as an invisible wall that balls
+     * bounce off in the next level.
+     * </p>
+     *
+     * @param g the game to remove the paddle from.
+     */
+    public void removeFromGame(GameLevel g) {
+        this.destroyGhost();
+        g.removeSprite(this);
+        g.removeCollidable(this);
     }
 
     /**

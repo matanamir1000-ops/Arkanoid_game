@@ -112,6 +112,28 @@ public class Rectangle {
     }
 
     /**
+     * Whether this rectangle overlaps another.
+     * <p>
+     * Touching edges do not count as overlapping, which keeps two rectangles
+     * laid side by side from reporting a collision along the seam between them.
+     * </p>
+     *
+     * @param other the rectangle to test against.
+     * @return true if the two rectangles share any area.
+     */
+    public boolean intersects(Rectangle other) {
+        double thisLeft = this.upperLeft.getX();
+        double thisTop = this.upperLeft.getY();
+        double otherLeft = other.getUpperLeft().getX();
+        double otherTop = other.getUpperLeft().getY();
+
+        return thisLeft < otherLeft + other.getWidth()
+                && thisLeft + this.width > otherLeft
+                && thisTop < otherTop + other.getHeight()
+                && thisTop + this.height > otherTop;
+    }
+
+    /**
      * Gets the point at the middle of the rectangle.
      *
      * @return a new Point at the rectangle's centre.

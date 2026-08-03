@@ -3,6 +3,11 @@ package levels;
 import game.Background;
 import game.Sprite;
 import geometry.Velocity;
+import powerups.ExtraBall;
+import powerups.LaserPaddle;
+import powerups.PaddleExpansion;
+import powerups.PowerUp;
+import powerups.SlowBall;
 import sprites.Block;
 import sprites.BlockFactory;
 
@@ -103,6 +108,16 @@ public class Level1Staircase implements LevelInformation {
     @Override
     public Color backdropColor() {
         return BACKGROUND_COLOR;
+    }
+
+    @Override
+    public List<PowerUp> availablePowerUps() {
+        List<PowerUp> available = new ArrayList<>();
+        available.add(new ExtraBall());
+        available.add(new PaddleExpansion());
+        available.add(new LaserPaddle());
+        available.add(new SlowBall());
+        return available;
     }
 
     /**

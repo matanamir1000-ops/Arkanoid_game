@@ -2,6 +2,7 @@ package levels;
 
 import game.Sprite;
 import geometry.Velocity;
+import powerups.PowerUp;
 import sprites.Block;
 
 import java.util.List;
@@ -95,6 +96,22 @@ public interface LevelInformation {
      * @return a fresh list of fresh blocks.
      */
     List<Block> blocks();
+
+    /**
+     * The power-ups a destroyed block in this level may drop.
+     * <p>
+     * <b>Every call must return a new list.</b> The same reasoning as blocks():
+     * a level is replayed after a lost ball, and a cached list would be shared
+     * between attempts.
+     * </p>
+     * <p>
+     * An empty list means this level drops nothing, which is how a level opts
+     * out entirely. Nothing anywhere has to be told that it has opted out.
+     * </p>
+     *
+     * @return a fresh list of the power-ups available in this level.
+     */
+    List<PowerUp> availablePowerUps();
 
     /**
      * How many blocks must be destroyed to clear the level.
