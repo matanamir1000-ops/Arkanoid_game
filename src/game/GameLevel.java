@@ -2,6 +2,7 @@ package game;
 
 import animation.Animation;
 import animation.AnimationRunner;
+import animation.CountdownAnimation;
 import animation.KeyPressStoppableAnimation;
 import animation.PauseScreen;
 import biuoop.DrawSurface;
@@ -15,6 +16,7 @@ import levels.LevelInformation;
 import sprites.Ball;
 import sprites.Block;
 import sprites.LevelNameIndicator;
+import sprites.LivesIndicator;
 import sprites.Paddle;
 import sprites.ScoreIndicator;
 
@@ -43,9 +45,12 @@ public class GameLevel implements Animation {
     private static final String PAUSE_KEY_UPPER = "P";
 
     private static final int BORDER_THICKNESS = 20;
-    private static final int SCORE_INDICATOR_HEIGHT = 20;
+    private static final int TOP_STRIP_HEIGHT = 20;
     private static final Color TOP_STRIP_COLOR = Color.LIGHT_GRAY;
-    private static final int LEVEL_CLEAR_BONUS = 100;
+    private static final int TOP_STRIP_SECTIONS = 3;
+
+    private static final double COUNTDOWN_SECONDS = 2;
+    private static final int COUNTDOWN_FROM = 3;
 
     // --- Playfield defaults ---
     // These are the parts of a level that do NOT vary between levels, which is
@@ -66,37 +71,46 @@ public class GameLevel implements Animation {
     private final KeyboardSensor keyboard;
     private final int screenWidth;
     private final int screenHeight;
+    private final Counter score;
+    private final Counter lives;
     private SpriteCollection sprites;
     private GameEnvironment environment;
     private Counter remainingBlocks;
     private Counter remainingBalls;
-    private Counter score;
     private BlockRemover blockRemover;
     private ScoreTrackingListener scoreTracker;
+    private Paddle paddle;
 
     /**
      * Constructor for a new GameLevel.
-     * Initializes the internal collections and stores the injected session-wide
-     * collaborators.
+     * Initializes the internal collections and stores the injected collaborators.
+     * <p>
+     * The score and lives counters are passed in rather than created here because
+     * they outlive the level: they belong to the session and must carry across
+     * level transitions. The level only reads and adds to them.
+     * </p>
      *
      * @param levelInfo    the definition of what this level contains.
      * @param runner       the runner that will drive this level's frames.
      * @param keyboard     the keyboard shared by the paddle and the pause screen.
      * @param screenWidth  the playfield width, in pixels.
      * @param screenHeight the playfield height, in pixels.
+     * @param score        the session-wide score counter.
+     * @param lives        the session-wide lives counter, for display only.
      */
     public GameLevel(LevelInformation levelInfo, AnimationRunner runner, KeyboardSensor keyboard,
-                     int screenWidth, int screenHeight) {
+                     int screenWidth, int screenHeight, Counter score, Counter lives) {
         this.levelInfo = levelInfo;
         this.runner = runner;
         this.keyboard = keyboard;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
+        this.score = score;
+        this.lives = lives;
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
         this.remainingBalls = new Counter(0);
-        this.score = new Counter(0);
     }
 
     /**
@@ -122,18 +136,23 @@ public class GameLevel implements Animation {
      * same for every level, and register every GameItem polymorphically in a
      * single pass.
      * <p>
+     * This builds everything that survives losing a ball -- the backdrop, the
+     * indicators, the borders, the blocks and the paddle. The balls are not
+     * created here: they belong to a single turn, and playOneTurn creates a
+     * fresh set each time it is called.
+     * </p>
+     * <p>
      * The backdrop is added straight to the sprite collection before anything
      * else so that it is drawn underneath every other sprite each frame.
      * </p>
      */
     public void initialize() {
         this.addSprite(this.levelInfo.getBackground());
-        this.addSprite(new Background(TOP_STRIP_COLOR, 0, 0, this.screenWidth, SCORE_INDICATOR_HEIGHT));
+        this.addSprite(new Background(TOP_STRIP_COLOR, 0, 0, this.screenWidth, TOP_STRIP_HEIGHT));
         List<GameItem> items = new ArrayList<>();
         this.createListenersAndIndicators(items);
         this.createBorders(items);
         this.createBlocks(items);
-        this.createBalls(items);
         this.createPaddle(items);
 
         for (GameItem item : items) {
@@ -142,13 +161,14 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Creates the shared block/score listeners and the two top-strip indicators.
+     * Creates the shared block/score listeners and the three top-strip indicators.
      * The BlockRemover and ScoreTrackingListener are stored on the GameLevel instance so
      * createBlocks can attach the same instances to every gameplay block.
      * <p>
-     * Both indicators draw text only; the strip they sit in is painted by its
-     * own background sprite in initialize(), so the order they are added in does
-     * not matter.
+     * The strip is divided into three equal sections and each indicator is given
+     * one of them. Splitting the space is what keeps them from overlapping:
+     * DrawSurface offers no way to measure rendered text, so an indicator cannot
+     * know how much room it needs and must instead be told where it may draw.
      * </p>
      *
      * @param items the in-progress list of GameItems to append the indicators to.
@@ -156,9 +176,15 @@ public class GameLevel implements Animation {
     private void createListenersAndIndicators(List<GameItem> items) {
         this.blockRemover = new BlockRemover(this, this.remainingBlocks);
         this.scoreTracker = new ScoreTrackingListener(this.score);
-        Rectangle topStrip = new Rectangle(new Point(0, 0), this.screenWidth, SCORE_INDICATOR_HEIGHT);
-        items.add(new ScoreIndicator(this.score, topStrip));
-        items.add(new LevelNameIndicator(this.levelInfo.levelName(), topStrip));
+
+        int sectionWidth = this.screenWidth / TOP_STRIP_SECTIONS;
+        Rectangle livesArea = new Rectangle(new Point(0, 0), sectionWidth, TOP_STRIP_HEIGHT);
+        Rectangle scoreArea = new Rectangle(new Point(sectionWidth, 0), sectionWidth, TOP_STRIP_HEIGHT);
+        Rectangle nameArea = new Rectangle(new Point(2 * sectionWidth, 0), sectionWidth, TOP_STRIP_HEIGHT);
+
+        items.add(new LivesIndicator(this.lives, livesArea));
+        items.add(new ScoreIndicator(this.score, scoreArea));
+        items.add(new LevelNameIndicator(this.levelInfo.levelName(), nameArea));
     }
 
     /**
@@ -169,7 +195,7 @@ public class GameLevel implements Animation {
      * @param items the in-progress list of GameItems to append the borders to.
      */
     private void createBorders(List<GameItem> items) {
-        items.add(new Block(new Rectangle(new Point(0, SCORE_INDICATOR_HEIGHT),
+        items.add(new Block(new Rectangle(new Point(0, TOP_STRIP_HEIGHT),
                 this.screenWidth, BORDER_THICKNESS), Color.LIGHT_GRAY));
 
         Block deathRegion = new Block(new Rectangle(new Point(0, this.screenHeight - BORDER_THICKNESS),
@@ -178,8 +204,8 @@ public class GameLevel implements Animation {
         deathRegion.addHitListener(ballRemover);
         items.add(deathRegion);
 
-        int sideBordersStartY = SCORE_INDICATOR_HEIGHT + BORDER_THICKNESS;
-        int sideBordersHeight = this.screenHeight - SCORE_INDICATOR_HEIGHT - (2 * BORDER_THICKNESS);
+        int sideBordersStartY = TOP_STRIP_HEIGHT + BORDER_THICKNESS;
+        int sideBordersHeight = this.screenHeight - TOP_STRIP_HEIGHT - (2 * BORDER_THICKNESS);
 
         items.add(new Block(new Rectangle(new Point(0, sideBordersStartY),
                 BORDER_THICKNESS, sideBordersHeight), Color.LIGHT_GRAY));
@@ -188,8 +214,7 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Creates the starting balls described by the level and increments the
-     * remainingBalls counter for each.
+     * Creates a fresh set of balls for one turn, stacked above the paddle.
      * <p>
      * The velocity list is the single source of truth for how many balls there
      * are. LevelInformation also exposes numberOfBalls(), but the two could
@@ -198,10 +223,8 @@ public class GameLevel implements Animation {
      * it is decided here: they are stacked upwards from just above the paddle so
      * that they do not begin inside one another.
      * </p>
-     *
-     * @param items the in-progress list of GameItems to append the balls to.
      */
-    private void createBalls(List<GameItem> items) {
+    private void createBallsOnTopOfPaddle() {
         List<Velocity> velocities = this.levelInfo.initialBallVelocities();
         int centreX = this.screenWidth / 2;
 
@@ -209,7 +232,7 @@ public class GameLevel implements Animation {
             Point start = new Point(centreX, BALL_START_Y - i * BALL_STACK_GAP);
             Ball ball = new Ball(start, BALL_RADIUS, BALL_COLOR);
             ball.setVelocity(velocities.get(i));
-            items.add(ball);
+            ball.addToGame(this);
             this.remainingBalls.increase(1);
         }
     }
@@ -225,7 +248,8 @@ public class GameLevel implements Animation {
         int paddleX = (this.screenWidth - paddleWidth) / 2;
         Rectangle paddleRect = new Rectangle(new Point(paddleX, PADDLE_START_Y),
                 paddleWidth, PADDLE_HEIGHT);
-        items.add(new Paddle(this.keyboard, paddleRect, PADDLE_COLOR, this.levelInfo.paddleSpeed()));
+        this.paddle = new Paddle(this.keyboard, paddleRect, PADDLE_COLOR, this.levelInfo.paddleSpeed());
+        items.add(this.paddle);
     }
 
     /**
@@ -253,22 +277,46 @@ public class GameLevel implements Animation {
     }
 
     /**
-     * Run the level -- hand this level to the runner and report the outcome.
+     * Play one turn: reset the paddle, launch a fresh set of balls, count the
+     * player in, and then run frames until the turn ends.
      * <p>
-     * The timing loop that used to live here now lives in AnimationRunner. What
-     * remains is the part that is genuinely about this level: handing itself
-     * over, and deciding what the terminal state means once the runner returns.
+     * A turn ends when the last ball is lost or the last block is cleared. It is
+     * GameFlow, not the level, that decides what that means -- whether a life is
+     * spent, whether the level is over, whether the session is over. The level
+     * only knows how to play one turn of itself.
+     * </p>
+     * <p>
+     * The countdown is run before this level is handed to the runner, so the
+     * board sits frozen on screen while the player gets ready.
      * </p>
      */
-    public void run() {
+    public void playOneTurn() {
+        this.paddle.resetPosition();
+        this.createBallsOnTopOfPaddle();
+        this.runner.run(new CountdownAnimation(COUNTDOWN_SECONDS, COUNTDOWN_FROM, this.sprites));
         this.runner.run(this);
+    }
 
-        if (this.remainingBlocks.getValue() <= 0) {
-            this.score.increase(LEVEL_CLEAR_BONUS);
-            System.out.println("You Win!\nYour score is: " + this.score.getValue());
-        } else {
-            System.out.println("Game Over.\nYour score is: " + this.score.getValue());
-        }
+    /**
+     * Whether every block that had to be destroyed has been.
+     * <p>
+     * Callers are told the level's state rather than handed a counter to judge
+     * for themselves, so "cleared" is defined in exactly one place.
+     * </p>
+     *
+     * @return true once the level has been cleared.
+     */
+    public boolean isCleared() {
+        return this.remainingBlocks.getValue() <= 0;
+    }
+
+    /**
+     * Whether the current turn ended with no balls left in play.
+     *
+     * @return true once every ball of this turn has been lost.
+     */
+    public boolean isTurnLost() {
+        return this.remainingBalls.getValue() <= 0;
     }
 
     /**
@@ -314,7 +362,7 @@ public class GameLevel implements Animation {
      */
     @Override
     public boolean shouldStop() {
-        return this.remainingBlocks.getValue() <= 0 || this.remainingBalls.getValue() <= 0;
+        return this.isCleared() || this.isTurnLost();
     }
 
     /**

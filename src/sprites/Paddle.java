@@ -39,6 +39,7 @@ public class Paddle implements Sprite, Collidable, GameItem {
 
     private biuoop.KeyboardSensor keyboard;
     private Rectangle shape;
+    private final Rectangle startingShape;
     private Color color;
     private final int step;
     private GameLevel game;
@@ -55,8 +56,24 @@ public class Paddle implements Sprite, Collidable, GameItem {
     public Paddle(biuoop.KeyboardSensor keyboard, Rectangle shape, Color color, int step) {
         this.keyboard = keyboard;
         this.shape = new Rectangle(shape.getUpperLeft(), shape.getWidth(), shape.getHeight());
+        this.startingShape = new Rectangle(shape.getUpperLeft(), shape.getWidth(), shape.getHeight());
         this.color = color;
         this.step = step;
+    }
+
+    /**
+     * Returns the paddle to where it started.
+     * <p>
+     * Called at the beginning of each turn so that a new set of balls always
+     * launches onto a paddle in a known place, rather than wherever the previous
+     * turn happened to leave it. Any wrap-around ghost is discarded too, since
+     * the starting position never straddles a screen edge.
+     * </p>
+     */
+    public void resetPosition() {
+        this.shape = new Rectangle(this.startingShape.getUpperLeft(),
+                this.startingShape.getWidth(), this.startingShape.getHeight());
+        this.destroyGhost();
     }
 
     /**
