@@ -66,6 +66,7 @@ Phase 0 fixes these so that "checkstyle is clean" becomes a usable binary gate f
 - **All draw coordinates are `int`.** Particle positions must be stored as `double` and cast at draw time, or sub-pixel motion quantises to zero.
 - **`KeyboardSensor` has no key-release event.** Detecting "pressed and released" requires manual edge-detection state. This is the entire reason `KeyPressStoppableAnimation` exists.
 - **Unmapped character keys work.** `KeyboardSensorImpl.keyPressed` falls back to `String.valueOf(e.getKeyChar())` for keys outside its code map, so `isPressed("p")` is legitimate — but it is case-sensitive, so pause checks must be `isPressed("p") || isPressed("P")`.
+- **`gui.getDrawSurface()` returns a fresh, light-backed surface every frame** (confirmed in Phase 3). During gameplay this is invisible because the `Background` sprite fills 800×600 first, but **any standalone screen must paint its own background** or white text lands on a pale backdrop and vanishes. Applies to `PauseScreen`, and to `CountdownAnimation` / `WinScreen` / `GameOverScreen` in Phases 5–6.
 
 **Key budget** (7 documented constants + verified char keys):
 
@@ -229,6 +230,7 @@ most recent phase.
 | `phase-0` | `5f0167b` | Hygiene, seams, repo config |
 | `phase-1` | `324b70f` | Remove the colour-match gate |
 | `phase-2` | `57e5399` | Rename `Game` to `GameLevel` |
+| `phase-3` | `3a8512c` | Animation framework, GUI lifetime inversion |
 
 ---
 
