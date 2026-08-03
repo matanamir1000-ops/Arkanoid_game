@@ -69,6 +69,20 @@ public interface LevelInformation {
     Sprite getBackground();
 
     /**
+     * The dominant colour of the backdrop.
+     * <p>
+     * Effects need this because DrawSurface has no alpha channel: nothing can
+     * fade out, so a particle fades by approaching the backdrop until it is
+     * indistinguishable from it. That only works if it approaches the colour
+     * the level actually draws, which is why the level is asked rather than a
+     * constant kept somewhere else and hoped to match.
+     * </p>
+     *
+     * @return the colour effects should fade toward.
+     */
+    java.awt.Color backdropColor();
+
+    /**
      * The blocks that make up this level.
      * <p>
      * <b>Every call must return a new list of newly constructed Blocks.</b>

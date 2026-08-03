@@ -100,6 +100,11 @@ public class Level1Staircase implements LevelInformation {
         return new Background(BACKGROUND_COLOR, 0, 0, this.screenWidth, this.screenHeight);
     }
 
+    @Override
+    public Color backdropColor() {
+        return BACKGROUND_COLOR;
+    }
+
     /**
      * Builds the staircase: the top row is the widest and each row below it is
      * one block shorter, all right-aligned against the right border.

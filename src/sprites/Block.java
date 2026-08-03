@@ -196,6 +196,21 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
     public Point getCenter() {
         return this.shape.getCenter();
     }
+
+    /**
+     * The colour the block is currently showing.
+     * <p>
+     * This is the behaviour's answer, not the block's declared colour, so a
+     * tough block reports the shade it has worn down to. It is what the block
+     * would draw itself with this frame, which is what an effect wanting to
+     * match the block's appearance needs.
+     * </p>
+     *
+     * @return the colour this block draws with right now.
+     */
+    public java.awt.Color getDisplayColor() {
+        return this.behavior.displayColor(this.color);
+    }
     /**
      * Adds a HitListener to the list of listeners to hit events.
      *
@@ -222,7 +237,7 @@ public class Block implements Collidable, Sprite, GameItem, HitNotifier {
      */
     @Override
     public void drawOn(DrawSurface surface) {
-        this.shape.drawOn(surface, this.behavior.displayColor(this.color));
+        this.shape.drawOn(surface, this.getDisplayColor());
     }
 
     /**

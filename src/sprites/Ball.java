@@ -58,6 +58,21 @@ public class Ball implements Sprite, GameItem {
     }
 
     /**
+     * Places the ball at a new position, with no collision handling at all.
+     * <p>
+     * Protected because it is the seam a projectile subclass needs: a laser
+     * bolt travels in a straight line and is consumed by whatever it strikes,
+     * so it must move without the bouncing that moveOneStep performs. Nothing
+     * outside the hierarchy may move a ball, which is why this is not public.
+     * </p>
+     *
+     * @param newCenter where the ball should now be.
+     */
+    protected void moveCenterTo(Point newCenter) {
+        this.center = new Point(newCenter.getX(), newCenter.getY());
+    }
+
+    /**
      * Sets the velocity of the ball.
      *
      * @param v the new velocity.
@@ -215,14 +230,22 @@ public class Ball implements Sprite, GameItem {
     @Override
     public void addToGame(GameLevel game) {
         game.addSprite(this);
+        game.addBall(this);
         this.environment = game.getEnvironment();
     }
     /**
-     * Removes this ball from the specified game by removing it from the game's sprite collection.
+     * Removes this ball from the specified game.
+     * <p>
+     * The ball leaves both the sprite collection and the level's list of balls
+     * in one operation, so that no caller can drop it from one and not the
+     * other. A ball still listed after it had stopped being drawn would go on
+     * being trailed, slowed and counted as though it were in play.
+     * </p>
      *
      * @param g the game from which the ball should be removed
      */
     public void removeFromGame(GameLevel g) {
         g.removeSprite(this);
+        g.removeBall(this);
     }
 }

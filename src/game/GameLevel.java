@@ -13,6 +13,12 @@ import geometry.Point;
 import geometry.Rectangle;
 import geometry.Velocity;
 import levels.LevelInformation;
+import particles.BallSource;
+import particles.BallTrail;
+import particles.ParticleHitListener;
+import particles.ParticleSystem;
+import particles.RadialBurstEmitter;
+import particles.TrailEmitter;
 import sprites.Ball;
 import sprites.Block;
 import sprites.LevelNameIndicator;
@@ -40,7 +46,7 @@ import java.util.List;
  * and the playfield borders, which are the same for every level.
  * </p>
  */
-public class GameLevel implements Animation {
+public class GameLevel implements Animation, BallSource {
     private static final String PAUSE_KEY_LOWER = "p";
     private static final String PAUSE_KEY_UPPER = "P";
 
@@ -74,6 +80,8 @@ public class GameLevel implements Animation {
     private final Counter score;
     private final Counter lives;
     private final List<Block> blocks;
+    private final List<Ball> balls;
+    private final ParticleSystem particles;
     private SpriteCollection sprites;
     private GameEnvironment environment;
     private Counter remainingBlocks;
@@ -109,6 +117,8 @@ public class GameLevel implements Animation {
         this.score = score;
         this.lives = lives;
         this.blocks = new ArrayList<>();
+        this.balls = new ArrayList<>();
+        this.particles = new ParticleSystem();
         this.sprites = new SpriteCollection();
         this.environment = new GameEnvironment();
         this.remainingBlocks = new Counter(0);
@@ -156,10 +166,26 @@ public class GameLevel implements Animation {
         this.createBorders(items);
         this.createBlocks(items);
         this.createPaddle(items);
+        this.createEffects(items);
 
         for (GameItem item : items) {
             item.addToGame(this);
         }
+    }
+
+    /**
+     * Registers the visual effects that sit on top of the level.
+     * <p>
+     * Added last, and that ordering is the whole point: sprites are drawn in
+     * registration order, so anything registered after this would be painted
+     * over the particles instead of under them.
+     * </p>
+     *
+     * @param items the in-progress list of GameItems to append the effects to.
+     */
+    private void createEffects(List<GameItem> items) {
+        items.add(new BallTrail(this, this.particles, new TrailEmitter(this.levelInfo.backdropColor())));
+        items.add(this.particles);
     }
 
     /**
@@ -235,7 +261,6 @@ public class GameLevel implements Animation {
             Ball ball = new Ball(start, BALL_RADIUS, BALL_COLOR);
             ball.setVelocity(velocities.get(i));
             ball.addToGame(this);
-            this.remainingBalls.increase(1);
         }
     }
 
@@ -271,10 +296,13 @@ public class GameLevel implements Animation {
      */
     private void createBlocks(List<GameItem> items) {
         ExplosionListener explosions = new ExplosionListener(this);
+        ParticleHitListener burst = new ParticleHitListener(this.particles,
+                new RadialBurstEmitter(this.levelInfo.backdropColor()));
         for (Block block : this.levelInfo.blocks()) {
             block.addHitListener(this.blockRemover);
             block.addHitListener(this.scoreTracker);
             block.addHitListener(explosions);
+            block.addHitListener(burst);
             this.blocks.add(block);
             items.add(block);
         }
@@ -299,6 +327,49 @@ public class GameLevel implements Animation {
      */
     public List<Block> getBlocks() {
         return new ArrayList<>(this.blocks);
+    }
+
+    /**
+     * The balls currently in play.
+     * <p>
+     * A copy, for the same reason the block list is copied: a caller walking
+     * this list may cause a ball to be removed from it.
+     * </p>
+     *
+     * @return a copy of the level's live balls.
+     */
+    @Override
+    public List<Ball> getBalls() {
+        return new ArrayList<>(this.balls);
+    }
+
+    /**
+     * Takes a ball into play.
+     * <p>
+     * Called from Ball.addToGame, so that creating a ball is a single call that
+     * cannot be half-done. Anything that spawns a ball -- the start of a turn,
+     * or a power-up -- gets a ball that is drawn, trailed and counted, without
+     * having to remember three separate registrations.
+     * </p>
+     *
+     * @param ball the ball entering play.
+     */
+    public void addBall(Ball ball) {
+        this.balls.add(ball);
+        this.remainingBalls.increase(1);
+    }
+
+    /**
+     * Forgets a ball that has left the game.
+     * <p>
+     * Called from Ball.removeFromGame together with the sprite removal, so that
+     * a ball leaves both collections in one operation.
+     * </p>
+     *
+     * @param ball the ball to forget.
+     */
+    public void removeBall(Ball ball) {
+        this.balls.remove(ball);
     }
 
     /**
@@ -340,6 +411,7 @@ public class GameLevel implements Animation {
      * </p>
      */
     public void playOneTurn() {
+        this.particles.clear();
         this.paddle.resetPosition();
         this.createBallsOnTopOfPaddle();
         this.runner.run(new CountdownAnimation(COUNTDOWN_SECONDS, COUNTDOWN_FROM, this.sprites));
