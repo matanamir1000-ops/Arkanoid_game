@@ -21,7 +21,11 @@ public class Ass5Game {
     private static final int SCREEN_WIDTH = 800;
     private static final int SCREEN_HEIGHT = 600;
     private static final int FRAMES_PER_SECOND = 60;
-    private static final int STARTING_LIVES = 3;
+    // One life, not three. Three made a session drag: losing a ball costs the
+    // player time rather than tension, since the blocks already destroyed stay
+    // destroyed. Extra balls are the better way to be generous, and they are a
+    // level's decision rather than the session's.
+    private static final int STARTING_LIVES = 1;
 
     /**
      * Main entry point to start the game.
