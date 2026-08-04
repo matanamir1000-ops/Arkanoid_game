@@ -23,11 +23,11 @@ public class Level2DirectHit extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = Color.BLACK;
     private static final long STAR_SEED = 2L;
 
-    private static final int PADDLE_SPEED = 11;
+    private static final int PADDLE_SPEED = 8;
     private static final int PADDLE_WIDTH = 120;
 
     private static final int BALL_COUNT = 2;
-    private static final double BALL_SPEED = 8;
+    private static final double BALL_SPEED = 6;
 
     private static final int TARGET_WIDTH = 40;
     private static final int TARGET_HEIGHT = 40;
@@ -44,8 +44,9 @@ public class Level2DirectHit extends AbstractLevel {
     }
 
     /**
-     * Two balls leaving the paddle in opposite directions, so that one of them
-     * is on its way back down while the other is still climbing.
+     * Two balls, both climbing, leaning to opposite sides. Missing the target
+     * with one still leaves the other in play, which keeps a level this bare
+     * from turning on a single throw.
      *
      * @return the launch velocities.
      */

@@ -38,11 +38,16 @@ public class Ass5Game {
     private static final int SCREEN_HEIGHT = 600;
     private static final int FRAMES_PER_SECOND = 60;
 
-    // One life, not three. Three made a session drag: losing a ball costs the
-    // player time rather than tension, since the blocks already destroyed stay
-    // destroyed. Extra balls are the better way to be generous, and they are a
-    // level's decision rather than the session's.
-    private static final int STARTING_LIVES = 1;
+    // Two lives, which is a deliberate middle. Three made a session drag: losing
+    // a ball costs the player time rather than tension, since the blocks already
+    // destroyed stay destroyed. But one meant a single bad turn ended the whole
+    // five-level run with no way back, and that reads as unfair rather than
+    // hard. Two grants exactly one recovery across the session, and costs only a
+    // replayed turn rather than a replayed level, since the blocks broken before
+    // it stay broken. This is the session's only say in the difficulty; how
+    // forgiving any single turn feels is a level's decision, made through its
+    // ball count, its pace and the power-ups it offers.
+    private static final int STARTING_LIVES = 2;
 
     private static final String HIGH_SCORES_FILE = "highscores.txt";
     private static final int HIGH_SCORES_KEPT = 10;

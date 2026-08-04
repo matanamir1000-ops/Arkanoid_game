@@ -36,7 +36,7 @@ public abstract class AbstractLevel implements LevelInformation {
     // The lean grows with every pair, so a large enough fan would eventually
     // reach horizontal and then point downward, launching balls into the death
     // region. 15 + 5 * 14 = 85 degrees, so eleven is the most balls this may be
-    // asked for. No level comes near it; the largest fan in the game is seven.
+    // asked for. No level in the game comes anywhere near that limit.
     private static final int MAX_FANNED_BALLS = 11;
 
     private final int screenWidth;

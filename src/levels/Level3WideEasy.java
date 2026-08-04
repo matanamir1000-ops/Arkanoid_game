@@ -12,8 +12,8 @@ import java.util.List;
 /**
  * A single wide row, a very wide paddle, and a spread of balls.
  * <p>
- * The balls fan out symmetrically rather than starting parallel, so the row
- * comes apart from several places at once.
+ * The balls fan out rather than starting parallel, so the row comes apart from
+ * several places at once.
  * </p>
  */
 public class Level3WideEasy extends AbstractLevel {
@@ -21,11 +21,11 @@ public class Level3WideEasy extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = new Color(12, 24, 48);
     private static final Color GRID_COLOR = new Color(90, 140, 200);
 
-    private static final int PADDLE_SPEED = 9;
+    private static final int PADDLE_SPEED = 8;
     private static final int PADDLE_WIDTH = 280;
 
-    private static final int BALL_COUNT = 7;
-    private static final double BALL_SPEED = 8.5;
+    private static final int BALL_COUNT = 5;
+    private static final double BALL_SPEED = 6.5;
 
     private static final int BLOCK_WIDTH = 50;
     private static final int BLOCK_HEIGHT = 22;
@@ -45,7 +45,7 @@ public class Level3WideEasy extends AbstractLevel {
     }
 
     /**
-     * The widest fan in the game, to match the widest paddle.
+     * A broad fan, to match a paddle broad enough to gather it back in.
      *
      * @return the launch velocities.
      */

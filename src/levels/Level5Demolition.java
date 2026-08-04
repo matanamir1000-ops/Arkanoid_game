@@ -26,11 +26,11 @@ public class Level5Demolition extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = new Color(30, 8, 8);
     private static final Color GRID_COLOR = new Color(180, 60, 40);
 
-    private static final int PADDLE_SPEED = 12;
+    private static final int PADDLE_SPEED = 9;
     private static final int PADDLE_WIDTH = 130;
 
-    private static final int BALL_COUNT = 6;
-    private static final double BALL_SPEED = 10;
+    private static final int BALL_COUNT = 4;
+    private static final double BALL_SPEED = 7.5;
 
     private static final int COLUMNS = 10;
     private static final int ROWS = 5;
@@ -39,12 +39,17 @@ public class Level5Demolition extends AbstractLevel {
     private static final int GRID_TOP = 120;
     private static final int GRID_LEFT = 90;
 
-    private static final int ARMOUR_HITS = 3;
+    // Two hits, not three. At three, clearing this level took over a hundred and
+    // thirty separate impacts, which is not difficulty so much as duration.
+    private static final int ARMOUR_HITS = 2;
     private static final double BLAST_RADIUS = 95;
     private static final int CHARGE_EVERY = 7;
     private static final Color CHARGE_COLOR = Color.ORANGE;
+    // One colour per hit point, worn from the last entry down to the first, so a
+    // block's damage can be read off it. Two entries because armour takes two
+    // hits; a third would never be seen.
     private static final Color[] ARMOUR_PALETTE = {
-        new Color(120, 40, 40), new Color(180, 80, 60), new Color(230, 140, 90),
+        new Color(120, 40, 40), new Color(200, 95, 70),
     };
 
     /**
@@ -90,9 +95,9 @@ public class Level5Demolition extends AbstractLevel {
     /**
      * No ExtraBall capsule here.
      * <p>
-     * The level already starts with six balls, and chain explosions clear large
-     * areas at once; handing out more on top of that turns the last level into a
-     * formality.
+     * The level already starts with the largest volley of any level but one, and
+     * chain explosions clear large areas at once; handing out more on top of
+     * that turns the last level into a formality.
      * </p>
      *
      * @return the power-ups this level offers.

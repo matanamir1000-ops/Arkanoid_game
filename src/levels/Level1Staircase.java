@@ -13,17 +13,18 @@ import java.util.List;
  * The opening level: six rows of blocks arranged as a descending staircase.
  * <p>
  * This is the layout the game has always had, moved out of GameLevel and
- * expressed as data. The staircase itself is unchanged; the balls it is played
- * with are faster and there are more of them than the original had.
+ * expressed as data. It opens the game, so it is tuned to teach the controls
+ * rather than to test them: a small volley at the slowest pace any level uses,
+ * against a wide staircase that is hard to miss.
  * </p>
  */
 public class Level1Staircase extends AbstractLevel {
     private static final String LEVEL_NAME = "Staircase";
 
-    private static final int BALL_COUNT = 5;
-    private static final double BALL_SPEED = 8;
+    private static final int BALL_COUNT = 3;
+    private static final double BALL_SPEED = 6;
 
-    private static final int PADDLE_SPEED = 10;
+    private static final int PADDLE_SPEED = 8;
     private static final int PADDLE_WIDTH = 150;
 
     private static final Color BACKGROUND_COLOR = Color.BLACK;

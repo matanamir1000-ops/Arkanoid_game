@@ -74,8 +74,16 @@ public class GameLevel implements Animation, BallSource {
     private static final int PADDLE_HEIGHT = 10;
     private static final Color PADDLE_COLOR = Color.ORANGE;
 
-    /** How often a destroyed block leaves a power-up behind. */
-    private static final double POWER_UP_DROP_CHANCE = 0.12;
+    /**
+     * How often a destroyed block leaves a power-up behind.
+     * <p>
+     * Capsules are the only help available to the player without losing the turn
+     * first, which makes them the cheapest place to be generous: unlike a faster
+     * ball or a bigger volley, more of them ease the level without making it
+     * busier to watch.
+     * </p>
+     */
+    private static final double POWER_UP_DROP_CHANCE = 0.18;
 
     private final LevelInformation levelInfo;
     private final AnimationRunner runner;
