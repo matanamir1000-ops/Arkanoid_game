@@ -21,13 +21,11 @@ public class Level3WideEasy extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = new Color(12, 24, 48);
     private static final Color GRID_COLOR = new Color(90, 140, 200);
 
-    private static final int PADDLE_SPEED = 5;
+    private static final int PADDLE_SPEED = 9;
     private static final int PADDLE_WIDTH = 280;
 
-    private static final int BALL_COUNT = 6;
-    private static final double BALL_SPEED = 5.5;
-    private static final double FIRST_ANGLE = -50;
-    private static final double ANGLE_STEP = 20;
+    private static final int BALL_COUNT = 7;
+    private static final double BALL_SPEED = 8.5;
 
     private static final int BLOCK_WIDTH = 50;
     private static final int BLOCK_HEIGHT = 22;
@@ -46,27 +44,14 @@ public class Level3WideEasy extends AbstractLevel {
         super(screenWidth, screenHeight);
     }
 
-    @Override
-    public int numberOfBalls() {
-        return BALL_COUNT;
-    }
-
     /**
-     * Balls fanned out evenly either side of vertical.
-     * <p>
-     * The steps are chosen so that no ball ends up at exactly zero degrees: a
-     * perfectly vertical ball can stalemate against a motionless paddle.
-     * </p>
+     * The widest fan in the game, to match the widest paddle.
      *
      * @return the launch velocities.
      */
     @Override
     public List<Velocity> initialBallVelocities() {
-        List<Velocity> velocities = new ArrayList<>();
-        for (int i = 0; i < BALL_COUNT; i++) {
-            velocities.add(Velocity.fromAngleAndSpeed(FIRST_ANGLE + i * ANGLE_STEP, BALL_SPEED));
-        }
-        return velocities;
+        return this.fannedVelocities(BALL_COUNT, BALL_SPEED);
     }
 
     @Override

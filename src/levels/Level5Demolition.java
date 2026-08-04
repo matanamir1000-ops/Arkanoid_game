@@ -26,13 +26,11 @@ public class Level5Demolition extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = new Color(30, 8, 8);
     private static final Color GRID_COLOR = new Color(180, 60, 40);
 
-    private static final int PADDLE_SPEED = 9;
+    private static final int PADDLE_SPEED = 12;
     private static final int PADDLE_WIDTH = 130;
 
-    private static final int BALL_COUNT = 3;
-    private static final double BALL_SPEED = 6.5;
-    private static final double FIRST_ANGLE = -35;
-    private static final double ANGLE_STEP = 35;
+    private static final int BALL_COUNT = 6;
+    private static final double BALL_SPEED = 10;
 
     private static final int COLUMNS = 10;
     private static final int ROWS = 5;
@@ -60,17 +58,8 @@ public class Level5Demolition extends AbstractLevel {
     }
 
     @Override
-    public int numberOfBalls() {
-        return BALL_COUNT;
-    }
-
-    @Override
     public List<Velocity> initialBallVelocities() {
-        List<Velocity> velocities = new ArrayList<>();
-        for (int i = 0; i < BALL_COUNT; i++) {
-            velocities.add(Velocity.fromAngleAndSpeed(FIRST_ANGLE + i * ANGLE_STEP, BALL_SPEED));
-        }
-        return velocities;
+        return this.fannedVelocities(BALL_COUNT, BALL_SPEED);
     }
 
     @Override
@@ -99,10 +88,11 @@ public class Level5Demolition extends AbstractLevel {
     }
 
     /**
-     * No extra balls here.
+     * No ExtraBall capsule here.
      * <p>
-     * Chain explosions already clear large areas at once; adding balls on top of
-     * that turns the last level into a formality.
+     * The level already starts with six balls, and chain explosions clear large
+     * areas at once; handing out more on top of that turns the last level into a
+     * formality.
      * </p>
      *
      * @return the power-ups this level offers.

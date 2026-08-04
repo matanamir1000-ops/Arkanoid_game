@@ -13,25 +13,17 @@ import java.util.List;
  * The opening level: six rows of blocks arranged as a descending staircase.
  * <p>
  * This is the layout the game has always had, moved out of GameLevel and
- * expressed as data. Behaviour is unchanged.
+ * expressed as data. The staircase itself is unchanged; the balls it is played
+ * with are faster and there are more of them than the original had.
  * </p>
  */
 public class Level1Staircase extends AbstractLevel {
     private static final String LEVEL_NAME = "Staircase";
 
-    private static final int NUMBER_OF_BALLS = 3;
-    private static final int BALL_SPEED_X = 4;
-    private static final int BALL_SPEED_Y = -4;
+    private static final int BALL_COUNT = 5;
+    private static final double BALL_SPEED = 8;
 
-    // No ball may be launched perfectly vertically. The paddle's centre region
-    // reflects a ball straight back the way it came, preserving dx -- so a ball
-    // with dx == 0 that meets a motionless paddle bounces between the paddle and
-    // the top border forever, and the level can never end. Every other bounce in
-    // the game preserves or flips dx but never zeroes it, so giving the third
-    // ball a slight drift at launch is enough to rule the stalemate out for good.
-    private static final int BALL_DRIFT_X = 2;
-
-    private static final int PADDLE_SPEED = 7;
+    private static final int PADDLE_SPEED = 10;
     private static final int PADDLE_WIDTH = 150;
 
     private static final Color BACKGROUND_COLOR = Color.BLACK;
@@ -62,17 +54,8 @@ public class Level1Staircase extends AbstractLevel {
     }
 
     @Override
-    public int numberOfBalls() {
-        return NUMBER_OF_BALLS;
-    }
-
-    @Override
     public List<Velocity> initialBallVelocities() {
-        List<Velocity> velocities = new ArrayList<>();
-        velocities.add(new Velocity(BALL_SPEED_X, BALL_SPEED_Y));
-        velocities.add(new Velocity(-BALL_SPEED_X, BALL_SPEED_Y));
-        velocities.add(new Velocity(BALL_DRIFT_X, BALL_SPEED_Y));
-        return velocities;
+        return this.fannedVelocities(BALL_COUNT, BALL_SPEED);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package levels;
 
+import geometry.Velocity;
 import powerups.ExtraBall;
 import powerups.LaserPaddle;
 import powerups.PaddleExpansion;
@@ -23,6 +24,20 @@ import java.util.List;
  */
 public abstract class AbstractLevel implements LevelInformation {
     private static final int BORDER_THICKNESS = 20;
+
+    // How far off vertical the innermost pair of balls is launched, and how much
+    // further out each pair after it goes. The minimum must stay above zero: it
+    // is the whole of what keeps fannedVelocities from launching a ball straight
+    // up, which is a launch no level may make. See initialBallVelocities on
+    // LevelInformation for why.
+    private static final double MIN_LEAN_DEGREES = 15;
+    private static final double LEAN_STEP_DEGREES = 14;
+
+    // The lean grows with every pair, so a large enough fan would eventually
+    // reach horizontal and then point downward, launching balls into the death
+    // region. 15 + 5 * 14 = 85 degrees, so eleven is the most balls this may be
+    // asked for. No level comes near it; the largest fan in the game is seven.
+    private static final int MAX_FANNED_BALLS = 11;
 
     private final int screenWidth;
     private final int screenHeight;
@@ -71,6 +86,69 @@ public abstract class AbstractLevel implements LevelInformation {
     }
 
     /**
+     * How many balls the level starts with.
+     * <p>
+     * Derived from the launch velocities rather than written down separately,
+     * for the same reason the block count is derived from the blocks. One ball
+     * is created per velocity, so a hand-written number here would be a second
+     * answer to a question that already has one, and only the velocity list can
+     * be honoured -- a ball with no velocity is not a ball. Deriving it means a
+     * level changes its ball count in exactly one place.
+     * </p>
+     *
+     * @return the ball count.
+     */
+    @Override
+    public final int numberOfBalls() {
+        return this.initialBallVelocities().size();
+    }
+
+    /**
+     * Launch velocities for a fan of balls, leaning alternately right and left
+     * of vertical.
+     * <p>
+     * The balls come out in pairs, the first pair leaning MIN_LEAN_DEGREES
+     * either side of vertical and each pair after it LEAN_STEP_DEGREES further
+     * out. An odd count leaves the outermost ball unpaired, leaning right.
+     * </p>
+     * <p>
+     * This is the easy way for a level to honour the rule that no ball may be
+     * launched straight up, which LevelInformation.initialBallVelocities()
+     * states and explains. It is a convenience, not a guarantee: a level that
+     * builds its own velocities can still break the rule, and nothing here can
+     * stop it. What this does promise is that every angle it produces is at
+     * least MIN_LEAN_DEGREES off vertical, so a level that asks for its balls
+     * here cannot get the stalemate by accident. Four levels used to each carry
+     * their own copy of that reasoning.
+     * </p>
+     *
+     * @param count how many balls to launch, at most MAX_FANNED_BALLS.
+     * @param speed how fast each of them travels, in pixels per frame.
+     * @return the launch velocities, innermost pair first.
+     * @throws IllegalArgumentException if count exceeds MAX_FANNED_BALLS, where
+     *                                  the fan would have spread so wide that
+     *                                  the outermost balls launched downward.
+     */
+    protected List<Velocity> fannedVelocities(int count, double speed) {
+        if (count > MAX_FANNED_BALLS) {
+            throw new IllegalArgumentException(
+                    "a fan of " + count + " balls would spread past horizontal; the most is " + MAX_FANNED_BALLS);
+        }
+
+        List<Velocity> velocities = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int pairIndex = i / 2;
+            double lean = MIN_LEAN_DEGREES + pairIndex * LEAN_STEP_DEGREES;
+            if (i % 2 == 0) {
+                velocities.add(Velocity.fromAngleAndSpeed(lean, speed));
+            } else {
+                velocities.add(Velocity.fromAngleAndSpeed(-lean, speed));
+            }
+        }
+        return velocities;
+    }
+
+    /**
      * Counts the blocks that clearing this level actually requires.
      * <p>
      * Derived from the blocks themselves rather than written down separately,
@@ -91,7 +169,7 @@ public abstract class AbstractLevel implements LevelInformation {
      * @return how many blocks must be destroyed.
      */
     @Override
-    public int numberOfBlocksToRemove() {
+    public final int numberOfBlocksToRemove() {
         int breakable = 0;
         for (Block block : this.blocks()) {
             if (block.isBreakable()) {

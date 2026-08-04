@@ -26,15 +26,29 @@ public interface LevelInformation {
 
     /**
      * The number of balls the player starts the level with.
+     * <p>
+     * This reports the size of {@link #initialBallVelocities()} rather than
+     * deciding anything: one ball is created per velocity, so that list is where
+     * the count is really set.
+     * </p>
      *
      * @return the ball count.
      */
     int numberOfBalls();
 
     /**
-     * The launch velocity of each starting ball.
+     * The launch velocity of each starting ball. One ball is created per entry,
+     * so the length of this list is the level's ball count.
      * <p>
-     * The list holds exactly {@link #numberOfBalls()} entries, one per ball.
+     * <b>No velocity may point straight up.</b> The middle region of the paddle
+     * reflects a ball by flipping its vertical direction and leaving the
+     * horizontal one alone, so a ball launched with no horizontal movement keeps
+     * none: it bounces between the paddle and the ceiling for as long as the
+     * player leaves the paddle still, and the level can never be cleared.
+     * Nothing else in the game ever brings a ball's horizontal movement to zero,
+     * so ruling it out at launch rules it out entirely. Levels extending
+     * AbstractLevel can get a set of velocities that already obey this from
+     * fannedVelocities.
      * </p>
      *
      * @return the initial velocities, in ball order.

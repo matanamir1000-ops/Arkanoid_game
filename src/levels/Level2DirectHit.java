@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One block, one ball, straight up.
+ * One block, and a pair of balls to find it with.
  * <p>
  * Deliberately austere: no power-ups, because a level that lasts a few seconds
  * has nowhere to spend them, and a capsule falling from the only block would
@@ -23,11 +23,11 @@ public class Level2DirectHit extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = Color.BLACK;
     private static final long STAR_SEED = 2L;
 
-    private static final int PADDLE_SPEED = 8;
+    private static final int PADDLE_SPEED = 11;
     private static final int PADDLE_WIDTH = 120;
 
-    private static final double BALL_SPEED_X = 1.5;
-    private static final double BALL_SPEED_Y = -5;
+    private static final int BALL_COUNT = 2;
+    private static final double BALL_SPEED = 8;
 
     private static final int TARGET_WIDTH = 40;
     private static final int TARGET_HEIGHT = 40;
@@ -43,26 +43,15 @@ public class Level2DirectHit extends AbstractLevel {
         super(screenWidth, screenHeight);
     }
 
-    @Override
-    public int numberOfBalls() {
-        return 1;
-    }
-
     /**
-     * A single ball, launched with a slight lean.
-     * <p>
-     * Not straight up. A perfectly vertical ball meeting the centre of a
-     * motionless paddle is reflected perfectly vertically again, and bounces
-     * between the paddle and the ceiling until the player intervenes.
-     * </p>
+     * Two balls leaving the paddle in opposite directions, so that one of them
+     * is on its way back down while the other is still climbing.
      *
-     * @return the launch velocity.
+     * @return the launch velocities.
      */
     @Override
     public List<Velocity> initialBallVelocities() {
-        List<Velocity> velocities = new ArrayList<>();
-        velocities.add(new Velocity(BALL_SPEED_X, BALL_SPEED_Y));
-        return velocities;
+        return this.fannedVelocities(BALL_COUNT, BALL_SPEED);
     }
 
     @Override

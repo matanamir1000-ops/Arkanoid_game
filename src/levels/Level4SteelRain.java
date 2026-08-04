@@ -23,13 +23,11 @@ public class Level4SteelRain extends AbstractLevel {
     private static final Color BACKGROUND_COLOR = new Color(20, 20, 26);
     private static final long STAR_SEED = 4L;
 
-    private static final int PADDLE_SPEED = 7;
+    private static final int PADDLE_SPEED = 11;
     private static final int PADDLE_WIDTH = 140;
 
-    private static final int BALL_COUNT = 2;
-    private static final double BALL_SPEED = 6;
-    private static final double LEFT_ANGLE = -40;
-    private static final double RIGHT_ANGLE = 40;
+    private static final int BALL_COUNT = 5;
+    private static final double BALL_SPEED = 9;
 
     private static final int COLUMNS = 12;
     private static final int ROWS = 4;
@@ -54,16 +52,8 @@ public class Level4SteelRain extends AbstractLevel {
     }
 
     @Override
-    public int numberOfBalls() {
-        return BALL_COUNT;
-    }
-
-    @Override
     public List<Velocity> initialBallVelocities() {
-        List<Velocity> velocities = new ArrayList<>();
-        velocities.add(Velocity.fromAngleAndSpeed(LEFT_ANGLE, BALL_SPEED));
-        velocities.add(Velocity.fromAngleAndSpeed(RIGHT_ANGLE, BALL_SPEED));
-        return velocities;
+        return this.fannedVelocities(BALL_COUNT, BALL_SPEED);
     }
 
     @Override
