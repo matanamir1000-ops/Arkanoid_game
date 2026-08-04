@@ -18,6 +18,7 @@ chaos_workspace/
 *_final.txt
 *.md
 !README.md
+!Game_Manual.md
 
 # Final additions for chaos and backups
 chaos/
